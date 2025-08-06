@@ -864,7 +864,7 @@
 
 //ACTUALIZADO
 // app/api/generate-pdf/[fichaId]/route.js
-import { PrismaClient } from '../../../../generated/prisma'
+import { PrismaClient } from "@prisma/client"
 import jsPDF from 'jspdf'
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'

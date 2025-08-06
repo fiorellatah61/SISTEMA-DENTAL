@@ -4,7 +4,7 @@
 // 3. src/app/api/dashboard/tratamientos-comunes/route.ts
 // ========================================
 import { NextResponse } from 'next/server'
-import { PrismaClient } from "../../../../generated/prisma"
+import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 

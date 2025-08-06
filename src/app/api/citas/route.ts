@@ -1,7 +1,7 @@
 // app/api/citas/Route.ts
 import { NextRequest, NextResponse } from 'next/server'
 // import { PrismaClient } from '@prisma/client'
-import { PrismaClient } from '../../../generated/prisma'
+import { PrismaClient } from "@prisma/client"
 import { auth } from '@clerk/nextjs/server'
 
 const prisma = new PrismaClient()

@@ -3,7 +3,7 @@
 // 4. src/app/api/dashboard/citas-por-mes/route.ts (Versión actualizada)
 // ========================================
 import { NextResponse } from 'next/server'
-import { PrismaClient } from "../../../../generated/prisma"
+import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
