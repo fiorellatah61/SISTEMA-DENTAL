@@ -2,7 +2,7 @@
 //   app/api/pacientes/buscar/route.tsx
 //--------------------NUEVO
 import { NextRequest, NextResponse } from 'next/server'
-import {PrismaClient} from '../../../../generated/prisma'
+import { PrismaClient } from "@prisma/client"
 // import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
