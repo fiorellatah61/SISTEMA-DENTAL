@@ -1,3 +1,4 @@
+//NUEVO
 // app/dashboard/paciente/odontograma/page.tsx
 'use client'
 import { useState, useEffect } from 'react'
@@ -182,26 +183,89 @@ export default function OdontogramaPage() {
     setMostrarFormularioPieza(true)
   }
 
-  // Función para obtener el filtro/overlay de color de un diente basado en su último estado
-  const obtenerOverlayDiente = (numeroDiente: number) => {
-    if (!odontograma) return ''
+  // Función para obtener información del procedimiento/condición de un diente
+  const obtenerInfoDiente = (numeroDiente: number) => {
+    if (!odontograma) return null
     
     const piezasEsta = odontograma.piezasOdontograma
       .filter(pieza => pieza.diente === numeroDiente.toString())
       .sort((a, b) => new Date(b.fechaRegistro).getTime() - new Date(a.fechaRegistro).getTime())
 
-    if (piezasEsta.length === 0) return ''
+    if (piezasEsta.length === 0) return null
 
     const ultimaPieza = piezasEsta[0]
     
-    // Buscar color del procedimiento o condición
+    // Buscar información del procedimiento o condición
     const procedimiento = procedimientos.find(p => p.nombre === ultimaPieza.procedimiento)
     const condicion = condiciones.find(c => c.nombre === ultimaPieza.condiciones)
     
-    if (procedimiento) return `bg-${procedimiento.color}-500 bg-opacity-40`
-    if (condicion) return `bg-${condicion.color}-500 bg-opacity-40`
+    return {
+      pieza: ultimaPieza,
+      procedimiento,
+      condicion
+    }
+  }
+
+  // Función para renderizar el símbolo del procedimiento
+  const renderizarSimboloProcedimiento = (numeroDiente: number) => {
+    const info = obtenerInfoDiente(numeroDiente)
     
-    return ''
+    if (!info) return null
+
+    const { procedimiento, condicion } = info
+
+    // Priorizar procedimiento sobre condición
+    const elemento = procedimiento || condicion
+    
+    if (!elemento || !elemento.simbolo) return null
+
+    return (
+      <div 
+        className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg pointer-events-none z-10"
+        style={{
+          textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+          fontSize: '14px'
+        }}
+      >
+        {elemento.simbolo}
+      </div>
+    )
+  }
+
+  // Función para obtener el color de fondo del diente
+  const obtenerColorFondoDiente = (numeroDiente: number) => {
+    const info = obtenerInfoDiente(numeroDiente)
+    
+    if (!info) return 'transparent'
+
+    const { procedimiento, condicion } = info
+    
+    // Priorizar procedimiento sobre condición
+    const elemento = procedimiento || condicion
+    
+    if (!elemento) return 'transparent'
+
+    // Convertir nombre de color a valor CSS
+    const coloresCSS: {[key: string]: string} = {
+      'red': '#ef4444',
+      'blue': '#3b82f6',
+      'green': '#22c55e',
+      'yellow': '#eab308',
+      'purple': '#a855f7',
+      'pink': '#ec4899',
+      'orange': '#f97316',
+      'gray': '#6b7280',
+      'cyan': '#06b6d4',
+      'lime': '#84cc16',
+      'indigo': '#6366f1',
+      'emerald': '#10b981',
+      'rose': '#f43f5f',
+      'amber': '#f59e0b',
+      'teal': '#14b8a6',
+      'violet': '#8b5cf6'
+    }
+
+    return coloresCSS[elemento.color] || elemento.color || 'transparent'
   }
 
   // Función para manejar cambios en el formulario de pieza
@@ -406,13 +470,21 @@ export default function OdontogramaPage() {
                           title={`Diente ${numeroDiente}`}
                         >
                           <div className="relative w-12 h-16">
+                            {/* Fondo de color para el procedimiento */}
+                            <div 
+                              className="absolute inset-0 rounded opacity-70"
+                              style={{
+                                backgroundColor: obtenerColorFondoDiente(numeroDiente)
+                              }}
+                            ></div>
+
                             {/* Imagen del diente */}
                             <Image
                               src={`/images/dientes/${numeroDiente}.png`}
                               alt={`Diente ${numeroDiente}`}
                               width={48}
                               height={64}
-                              className="w-full h-full object-contain"
+                              className="relative z-5 w-full h-full object-contain opacity-90"
                               onError={(e) => {
                                 // Fallback en caso de que no exista la imagen
                                 const target = e.target as HTMLImageElement;
@@ -420,14 +492,14 @@ export default function OdontogramaPage() {
                                 target.nextElementSibling?.classList.remove('hidden');
                               }}
                             />
+
                             {/* Fallback - mostrar número si no hay imagen */}
-                            <div className="hidden absolute inset-0 bg-blue-100 border rounded flex items-center justify-center text-xs font-semibold">
+                            <div className="hidden absolute inset-0 bg-blue-100 border rounded flex items-center justify-center text-xs font-semibold z-5">
                               {numeroDiente}
                             </div>
-                            {/* Overlay de color para procedimientos/condiciones */}
-                            {obtenerOverlayDiente(numeroDiente) && (
-                              <div className={`absolute inset-0 rounded ${obtenerOverlayDiente(numeroDiente)}`}></div>
-                            )}
+
+                            {/* Símbolo del procedimiento */}
+                            {renderizarSimboloProcedimiento(numeroDiente)}
                           </div>
                           {/* Número del diente debajo de la imagen */}
                           <div className="text-xs font-medium text-center mt-1 text-gray-700">
@@ -450,13 +522,21 @@ export default function OdontogramaPage() {
                           title={`Diente ${numeroDiente}`}
                         >
                           <div className="relative w-12 h-16">
+                            {/* Fondo de color para el procedimiento */}
+                            <div 
+                              className="absolute inset-0 rounded opacity-70"
+                              style={{
+                                backgroundColor: obtenerColorFondoDiente(numeroDiente)
+                              }}
+                            ></div>
+
                             {/* Imagen del diente */}
                             <Image
                               src={`/images/dientes/${numeroDiente}.png`}
                               alt={`Diente ${numeroDiente}`}
                               width={48}
                               height={64}
-                              className="w-full h-full object-contain transform rotate-180"
+                              className="relative z-5 w-full h-full object-contain transform rotate-180 opacity-90"
                               onError={(e) => {
                                 // Fallback en caso de que no exista la imagen
                                 const target = e.target as HTMLImageElement;
@@ -464,14 +544,14 @@ export default function OdontogramaPage() {
                                 target.nextElementSibling?.classList.remove('hidden');
                               }}
                             />
+
                             {/* Fallback - mostrar número si no hay imagen */}
-                            <div className="hidden absolute inset-0 bg-blue-100 border rounded flex items-center justify-center text-xs font-semibold">
+                            <div className="hidden absolute inset-0 bg-blue-100 border rounded flex items-center justify-center text-xs font-semibold z-5">
                               {numeroDiente}
                             </div>
-                            {/* Overlay de color para procedimientos/condiciones */}
-                            {obtenerOverlayDiente(numeroDiente) && (
-                              <div className={`absolute inset-0 rounded ${obtenerOverlayDiente(numeroDiente)}`}></div>
-                            )}
+
+                            {/* Símbolo del procedimiento */}
+                            {renderizarSimboloProcedimiento(numeroDiente)}
                           </div>
                           {/* Número del diente debajo de la imagen */}
                           <div className="text-xs font-medium text-center mt-1 text-gray-700">
@@ -481,20 +561,6 @@ export default function OdontogramaPage() {
                       ))}
                     </div>
                   </div>
-
-                {/*   /* Observaciones  */}
-                  {/* <div className="mt-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      OBSERVACIONES:
-                    </label>
-                    <textarea
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      rows={3}
-                      placeholder="Describir las observaciones..."
-                    />
-                  </div> */}
-
-
                 </div>
               </div>
 
@@ -516,7 +582,9 @@ export default function OdontogramaPage() {
                       <div key={proc.id} className="flex items-center text-xs">
                         <span className="w-4 mr-2">{index + 1}</span>
                         <span className="flex-1">{proc.nombre}</span>
-                        <div className={`w-3 h-3 rounded-full bg-${proc.color}-500 ml-1`}></div>
+                        <div className="w-8 h-4 rounded flex items-center justify-center text-white text-xs mr-1" style={{backgroundColor: proc.color}}>
+                          {proc.simbolo}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -530,7 +598,9 @@ export default function OdontogramaPage() {
                       <div key={cond.id} className="flex items-center text-xs">
                         <span className="w-4 mr-2">{index + 1}</span>
                         <span className="flex-1">{cond.nombre}</span>
-                        <div className={`w-3 h-3 rounded-full bg-${cond.color}-500 ml-1`}></div>
+                        <div className="w-8 h-4 rounded flex items-center justify-center text-white text-xs mr-1" style={{backgroundColor: cond.color}}>
+                          {cond.simbolo}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -584,7 +654,7 @@ export default function OdontogramaPage() {
                         <option value="">Seleccionar procedimiento</option>
                         {procedimientos.map((proc) => (
                           <option key={proc.id} value={proc.nombre}>
-                            {proc.codigo} - {proc.nombre}
+                            {proc.codigo} - {proc.nombre} {proc.simbolo ? `(${proc.simbolo})` : ''}
                           </option>
                         ))}
                       </select>
@@ -641,7 +711,7 @@ export default function OdontogramaPage() {
                         <option value="">Seleccionar condición</option>
                         {condiciones.map((cond) => (
                           <option key={cond.id} value={cond.nombre}>
-                            {cond.codigo} - {cond.nombre}
+                            {cond.codigo} - {cond.nombre} {cond.simbolo ? `(${cond.simbolo})` : ''}
                           </option>
                         ))}
                       </select>
@@ -750,7 +820,6 @@ export default function OdontogramaPage() {
                 </div>
               </div>
             )}
-
             {/* Botones de acción */}
             <ActionButtons
               pacienteSeleccionado={pacienteSeleccionado}
