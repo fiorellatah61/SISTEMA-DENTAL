@@ -1,0 +1,500 @@
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+// =====================
+// MODELO DE USUARIOS (Para Clerk)
+// =====================
+model User {
+  id              String   @id @default(cuid())
+  clerkUserId     String   @unique
+  email           String   @unique
+  firstName       String?
+  lastName        String?
+  imageUrl        String?
+  role            UserRole @default(DOCTOR)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relaciones
+  fichasOdontologicas  FichaOdontologica[] @relation("OdontologoFichas")
+  citas               Cita[]
+  historialCitas      HistorialCita[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  DOCTOR
+  RECEPCIONISTA
+}
+
+// =====================
+// PACIENTES
+// =====================
+model Paciente {
+  id                String      @id @default(cuid())
+  nombres           String      @db.VarChar(100)
+  apellidos         String      @db.VarChar(100)
+  dni               String      @unique @db.VarChar(20)
+  fechaNacimiento   DateTime?   @map("fecha_nacimiento") @db.Date
+  edad              Int?
+  sexo              Sexo?
+  telefono          String?     @db.VarChar(20)
+  email             String?     @db.VarChar(100)
+  lugarNacimiento   String?     @map("lugar_nacimiento") @db.VarChar(100)
+  direccionActual   String?     @map("direccion_actual") @db.VarChar(255)
+  acompanante       String?     @db.VarChar(100)
+  estado            EstadoPaciente @default(ACTIVO)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  // Relaciones
+  fichasOdontologicas FichaOdontologica[]
+  citas              Cita[]
+  chatbots           Chatbot[]
+  facturas           Factura[]
+
+  // Índices
+  @@index([dni])
+  @@index([nombres, apellidos])
+  @@index([estado])
+  @@map("pacientes")
+}
+
+enum Sexo {
+  M
+  F
+  OTRO @map("Otro")
+}
+
+enum EstadoPaciente {
+  ACTIVO   @map("Activo")
+  INACTIVO @map("Inactivo")
+}
+
+// =====================
+// FICHAS ODONTOLÓGICAS
+// =====================
+model FichaOdontologica {
+  id             String   @id @default(cuid())
+  numeroFicha    String   @unique @map("numero_ficha") @db.VarChar(20)
+  idPaciente     String   @map("id_paciente")
+  motivoConsulta String?  @map("motivo_consulta") @db.Text
+  fechaRegistro  DateTime @default(now()) @map("fecha_registro")
+  estado         EstadoFicha @default(ACTIVA)
+  idOdontologo   String?  @map("id_odontologo")
+  
+  // Campos para archivos PDF
+  archivoFichaPdf     String?  @map("archivo_ficha_pdf") // URL del PDF en Supabase
+  archivoOdontogramaPdf String? @map("archivo_odontograma_pdf") // URL del PDF del odontograma
+  fechaUltimoPdf      DateTime? @map("fecha_ultimo_pdf") // Cuándo se generó el último PDF
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relaciones
+  paciente                     Paciente                      @relation(fields: [idPaciente], references: [id], onDelete: Cascade)
+  odontologo                   User?                         @relation("OdontologoFichas", fields: [idOdontologo], references: [id], onDelete: SetNull)
+  antecedentesMedicos          AntecedentesMedicos?
+  examenClinicoEstomatologico  ExamenClinicoEstomatologico?
+  examenesOdontologicos        ExamenOdontologico[]
+  evolucionPacientes           EvolucionPaciente[]
+  odontogramas                 Odontograma[]
+  citas                        Cita[]
+
+  // Índices
+  @@index([numeroFicha])
+  @@index([idPaciente])
+  @@index([fechaRegistro])
+  @@index([estado])
+  @@map("ficha_odontologicas")
+}
+
+enum EstadoFicha {
+  ACTIVA    @map("Activa")
+  ARCHIVADA @map("Archivada")
+  CANCELADA @map("Cancelada")
+}
+
+// =====================
+// ANTECEDENTES MÉDICOS
+// =====================
+model AntecedentesMedicos {
+  id                    String  @id @default(cuid())
+  idFicha               String  @unique @map("id_ficha")
+  alergias              String? @db.Text
+  tuberculosis          Boolean @default(false)
+  hipertension          Boolean @default(false)
+  diabetes              Boolean @default(false)
+  hepatitis             Boolean @default(false)
+  hemorragias           Boolean @default(false)
+  enfermedadesCorazon   Boolean @default(false) @map("enfermedades_corazon")
+  medicamentosActuales  String? @map("medicamentos_actuales") @db.Text
+  otros                 String? @db.Text
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relaciones
+  ficha FichaOdontologica @relation(fields: [idFicha], references: [id], onDelete: Cascade)
+
+  @@map("antecedentes_medicos")
+}
+
+// =====================
+// EXAMEN CLÍNICO ESTOMATOLÓGICO
+// =====================
+model ExamenClinicoEstomatologico {
+  id               String  @id @default(cuid())
+  idFicha          String  @unique @map("id_ficha")
+  ATM              String? @db.VarChar(255)
+  ganglios         String? @db.VarChar(255)
+  piel             String? @db.VarChar(255)
+  simetriaFacial   String? @map("simetria_facial") @db.VarChar(255)
+  glandulasSalivales String? @map("glandulas_salivales") @db.VarChar(255)
+  encia            String? @db.VarChar(255)
+  vestibulo        String? @db.VarChar(255)
+  carrillo         String? @db.VarChar(255)
+  paladar          String? @db.VarChar(255)
+  orofaringe       String? @db.VarChar(255)
+  lengua           String? @db.VarChar(255)
+  pisoBoca         String? @map("piso_boca") @db.VarChar(255)
+  oclusion         String? @db.VarChar(255)
+  observaciones    String? @db.Text
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relaciones
+  ficha FichaOdontologica @relation(fields: [idFicha], references: [id], onDelete: Cascade)
+
+  @@map("examen_clinico_estomatologicos")
+}
+
+// =====================
+// PLAN DE TRATAMIENTOS
+// =====================
+model PlanTratamiento {
+  id          String  @id @default(cuid())
+  descripcion String  @db.Text
+  costoTotal  Decimal @map("costo_total") @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  examenesOdontologicos ExamenOdontologico[]
+  evolucionPacientes    EvolucionPaciente[]
+
+  @@map("plan_tratamientos")
+}
+
+// =====================
+// EXAMEN ODONTOLÓGICO
+// =====================
+model ExamenOdontologico {
+  id                  String   @id @default(cuid())
+  idFicha             String   @map("id_ficha")
+  idPlanesTratamiento String?  @map("id_planes_tratamiento")
+  fecha               DateTime @db.Date
+  examenClinicoGeneral String? @map("examen_clinico_general") @db.Text
+  diagnostico         String?  @db.Text
+  presupuesto         Decimal? @db.Decimal(10, 2)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relaciones
+  ficha           FichaOdontologica @relation(fields: [idFicha], references: [id], onDelete: Cascade)
+  planTratamiento PlanTratamiento?  @relation(fields: [idPlanesTratamiento], references: [id], onDelete: SetNull)
+  facturas        Factura[]
+
+  @@map("examen_odontologicos")
+}
+
+// =====================
+// EVOLUCIÓN PACIENTES
+// =====================
+model EvolucionPaciente {
+  id                  String   @id @default(cuid())
+  idFicha             String   @map("id_ficha")
+  idPlanesTratamiento String?  @map("id_planes_tratamiento")
+  fecha               DateTime @db.Date
+  tratamientoRealizado String  @map("tratamiento_realizado") @db.Text
+  aCuenta             Decimal  @default(0.00) @map("a_cuenta") @db.Decimal(10, 2)
+  saldo               Decimal  @default(0.00) @db.Decimal(10, 2)
+  observaciones       String?  @db.Text
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relaciones
+  ficha           FichaOdontologica @relation(fields: [idFicha], references: [id], onDelete: Cascade)
+  planTratamiento PlanTratamiento?  @relation(fields: [idPlanesTratamiento], references: [id], onDelete: SetNull)
+  facturas        Factura[]
+
+  @@map("evolucion_pacientes")
+}
+
+// =====================
+// ODONTOGRAMAS
+// =====================
+model Odontograma {
+  id                String   @id @default(cuid())
+  idFicha           String   @map("id_ficha")
+  fechaActualizacion DateTime @default(now()) @map("fecha_actualizacion")
+  
+  // Campos para archivos del odontograma
+  imagenOdontograma String?  @map("imagen_odontograma") // URL de imagen en Supabase
+  archivoJson       String?  @map("archivo_json") // Datos del odontograma en JSON
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relaciones
+  ficha           FichaOdontologica @relation(fields: [idFicha], references: [id], onDelete: Cascade)
+  piezasOdontograma PiezaOdontograma[]
+
+  @@map("odontogramas")
+}
+
+// =====================
+// PIEZAS DEL ODONTOGRAMA
+// =====================
+model PiezaOdontograma {
+  id              String   @id @default(cuid())
+  idOdontograma   String   @map("id_odontograma")
+  diente          String   @db.VarChar(10)
+  caraDental      String?  @map("cara_dental") @db.VarChar(20)
+  procedimiento   String   @db.VarChar(100)
+  subtipo         String?  @db.VarChar(100)
+  fechaRegistro   DateTime @default(now()) @map("fecha_registro")
+  condiciones     String?  @db.VarChar(255)
+  especificaciones String? @db.Text
+  estado          String   @default("Saludable") @db.VarChar(50)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relaciones
+  odontograma Odontograma @relation(fields: [idOdontograma], references: [id], onDelete: Cascade)
+
+  @@map("pieza_odontogramas")
+}
+
+// =====================
+// PROCEDIMIENTOS DENTALES
+// =====================
+model ProcedimientoDental {
+  id          String  @id @default(cuid())
+  codigo      String  @db.VarChar(20)
+  nombre      String  @db.VarChar(100)
+  descripcion String? @db.VarChar(255)
+  color       String  @default("blue") @db.VarChar(20)
+  simbolo     String? @db.VarChar(255)
+  esCondicion Boolean @default(false) @map("es_condicion")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("procedimiento_dentals")
+}
+
+// =====================
+// ESTADO DIENTES
+// =====================
+model EstadoDiente {
+  id        String   @id @default(cuid())
+  nombre    String   @db.VarChar(50)
+  color     String   @db.VarChar(20)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("estado_dientes")
+}
+
+// =====================
+// CITAS
+// =====================
+
+model Cita {
+  id           String      @id @default(cuid())
+  idPaciente   String      @map("id_paciente")
+  idFicha      String?     @map("id_ficha")
+  idUsuario    String      @map("id_usuario")
+  fechaHora    DateTime    @map("fecha_hora")
+  estado       EstadoCita  @default(SOLICITADA)
+  motivo       String?     @db.Text
+  observaciones String?    @db.Text
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  // Relaciones
+  paciente        Paciente        @relation(fields: [idPaciente], references: [id], onDelete: Cascade)
+  ficha           FichaOdontologica? @relation(fields: [idFicha], references: [id], onDelete: SetNull)
+  usuario         User            @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  recordatorios   Recordatorio[]
+  historialCitas  HistorialCita[]
+
+  // Índices
+  @@index([fechaHora, estado])
+  @@index([idPaciente])
+  @@index([idFicha])
+  @@map("citas")
+}
+
+enum EstadoCita {
+  SOLICITADA  @map("Solicitada")
+  CONFIRMADA  @map("Confirmada")
+  MODIFICADA  @map("Modificada")
+  CANCELADA   @map("Cancelada")
+}
+
+// =====================
+// RECORDATORIOS
+// =====================
+model Recordatorio {
+  id         String            @id @default(cuid())
+  idCita     String            @map("id_cita")
+  fechaEnvio DateTime          @map("fecha_envio")
+  medio      MedioRecordatorio
+  estado     EstadoRecordatorio
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  // Relaciones
+  cita Cita @relation(fields: [idCita], references: [id], onDelete: Cascade)
+
+  @@map("recordatorios")
+}
+
+enum MedioRecordatorio {
+  WHATSAPP @map("Whatsapp")
+  EMAIL    @map("Email")
+}
+
+enum EstadoRecordatorio {
+  ENVIADO @map("Enviado")
+  FALLIDO @map("Fallido")
+}
+
+// =====================
+// HISTORIAL CITAS
+// =====================
+model HistorialCita {
+  id                    String              @id @default(cuid())
+  idCita                String              @map("id_cita")
+  accion                AccionHistorial
+  fechaAccion           DateTime            @default(now()) @map("fecha_accion")
+  tipoUsuarioResponsable TipoUsuarioResponsable @map("tipo_usuario_responsable")
+  detalleCambio         String?             @map("detalle_cambio") @db.Text
+  idUsuario             String?             @map("id_usuario")
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  // Relaciones
+  cita    Cita  @relation(fields: [idCita], references: [id], onDelete: Cascade)
+  usuario User? @relation(fields: [idUsuario], references: [id], onDelete: SetNull)
+
+  @@map("historial_citas")
+}
+
+enum AccionHistorial {
+  CREACION      @map("Creación")
+  MODIFICACION  @map("Modificación")
+  CANCELACION   @map("Cancelación")
+}
+
+enum TipoUsuarioResponsable {
+  CHATBOT       @map("Chatbot")
+  RECEPCIONISTA @map("Recepcionista")
+  ODONTOLOGO    @map("Odontologo")
+  SISTEMA       @map("Sistema")
+}
+
+// =====================
+// CHATBOT
+// =====================
+model Chatbot {
+  id             String   @id @default(cuid())
+  mensajeEntrada String   @map("mensaje_entrada") @db.Text
+  respuestaSalida String  @map("respuesta_salida") @db.Text
+  fechaHora      DateTime @default(now()) @map("fecha_hora")
+  idPaciente     String?  @map("id_paciente")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relaciones
+  paciente Paciente? @relation(fields: [idPaciente], references: [id], onDelete: SetNull)
+
+  @@map("chatbots")
+}
+
+// =====================
+// SERVICIOS
+// =====================
+model Servicio {
+  id               String    @id @default(cuid())
+  nombre           String    @db.VarChar(100)
+  costo            Decimal   @db.Decimal(10, 2)
+  fechaVencimiento DateTime? @map("fecha_vencimiento")
+  estado           String    @db.VarChar(50)
+  fechaPago        DateTime? @map("fecha_pago")
+  metodoPago       String?   @map("metodo_pago") @db.VarChar(50)
+  descripcion      String?   @db.Text
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@map("servicios")
+}
+
+// =====================
+// FACTURAS
+// =====================
+model Factura {
+  id                    String   @id @default(cuid())
+  idPaciente            String   @map("id_paciente")
+  idExamenesOdontologico String? @map("id_examenes_odontologico")
+  idEvolucionPaciente   String?  @map("id_evolucion_paciente")
+  monto                 Decimal  @db.Decimal(10, 2)
+  fechaEmision          DateTime @default(now()) @map("fecha_emision")
+  metodoPago            String?  @map("metodo_pago") @db.VarChar(50)
+  referencia            String?  @db.VarChar(100)
+  estado                EstadoFactura @default(PENDIENTE)
+  
+  // Campo para archivo PDF de la factura
+  archivoFacturaPdf     String?  @map("archivo_factura_pdf") // URL del PDF en Supabase
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  // Relaciones
+  paciente            Paciente            @relation(fields: [idPaciente], references: [id], onDelete: Cascade)
+  examenOdontologico  ExamenOdontologico? @relation(fields: [idExamenesOdontologico], references: [id], onDelete: SetNull)
+  evolucionPaciente   EvolucionPaciente?  @relation(fields: [idEvolucionPaciente], references: [id], onDelete: SetNull)
+
+  @@map("facturas")
+}
+enum EstadoFactura {
+  COMPLETADO @map("Completado")
+  PENDIENTE  @map("Pendiente")
+  CANCELADO  @map("Cancelado")
+}
+
+
+// =====================
+// EMAILS AUTORIZADOS
+// =====================
+// =====================
+// EMAILS AUTORIZADOS
+// =====================
+model EmailAutorizado {
+  id        String   @id @default(cuid())
+  email     String   @unique @db.VarChar(100)
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([activo])
+  @@map("emails_autorizados")
+}
