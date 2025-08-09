@@ -326,6 +326,12 @@ model Cita {
   estado       EstadoCita  @default(SOLICITADA)
   motivo       String?     @db.Text
   observaciones String?    @db.Text
+
+
+  // NUEVOS CAMPOS para contacto temporal (para recordatorios)
+  telefonoContacto String?  @map("telefono_contacto") @db.VarChar(20)
+  emailContacto    String?  @map("email_contacto") @db.VarChar(100)
+  //--------------------------------------------------------
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 

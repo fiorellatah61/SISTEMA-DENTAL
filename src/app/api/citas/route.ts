@@ -35,7 +35,10 @@ export async function POST(request: NextRequest) {
       nuevoPaciente,
       fechaHora,
       motivo,
-      observaciones
+      observaciones,
+        // AGREGADO: Nuevos campos
+      telefonoContacto,
+      emailContacto
     } = body
 
     if (!idPaciente && !nuevoPaciente) {
@@ -103,7 +106,10 @@ export async function POST(request: NextRequest) {
           motivo: motivo || null,
           observaciones: observaciones || null,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
+          //CAMPOS AGREGADOS
+           telefonoContacto: telefonoContacto || null,
+          emailContacto: emailContacto || null,
         }
       })
 

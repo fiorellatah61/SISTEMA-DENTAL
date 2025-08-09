@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-
 // Definición de tipos dentro del archivo
 interface Paciente {
   id: string
@@ -22,6 +21,9 @@ interface Cita {
   paciente: Paciente
   createdAt: Date
   updatedAt: Date
+  // CORREGIDO: Estos deben ser propiedades opcionales, no valores
+  telefonoContacto?: string
+  emailContacto?: string
 }
 
 interface CitaFormProps {
@@ -32,6 +34,9 @@ interface CitaFormProps {
     fechaHora: Date
     motivo?: string
     observaciones?: string
+    // AGREGADO: Nuevos campos para contacto
+    telefonoContacto?: string
+    emailContacto?: string
   }) => Promise<{ success: boolean; error?: string }>
   onCancel: () => void
   loading: boolean
@@ -62,6 +67,11 @@ export default function CitaForm({
   )
   const [motivo, setMotivo] = useState(citaEditando?.motivo || '')
   const [observaciones, setObservaciones] = useState(citaEditando?.observaciones || '')
+  
+  // AGREGADO: Estados para los nuevos campos de contacto
+  const [telefonoContacto, setTelefonoContacto] = useState(citaEditando?.telefonoContacto || '')
+  const [emailContacto, setEmailContacto] = useState(citaEditando?.emailContacto || '')
+  
   const [error, setError] = useState('')
   const [buscandoPaciente, setBuscandoPaciente] = useState(false)
 
@@ -79,6 +89,13 @@ export default function CitaForm({
         setIdPaciente(paciente.id)
         setNombres(paciente.nombres)
         setApellidos(paciente.apellidos)
+        // AGREGADO: Auto-llenar contacto si el paciente ya tiene datos
+        if (paciente.telefono && !telefonoContacto) {
+          setTelefonoContacto(paciente.telefono)
+        }
+        if (paciente.email && !emailContacto) {
+          setEmailContacto(paciente.email)
+        }
         setError('')
       } else if (response.status === 404) {
         setError('Paciente no encontrado')
@@ -106,12 +123,16 @@ export default function CitaForm({
       return
     }
 
+    // MODIFICADO: Incluir los nuevos campos en los datos
     const datos = {
       idPaciente: esPacienteNuevo ? undefined : idPaciente,
       nuevoPaciente: esPacienteNuevo ? { nombres, apellidos, dni } : undefined,
       fechaHora,
       motivo: motivo || undefined,
-      observaciones: observaciones || undefined
+      observaciones: observaciones || undefined,
+      // AGREGADO: Nuevos campos de contacto
+      telefonoContacto: telefonoContacto || undefined,
+      emailContacto: emailContacto || undefined
     }
 
     // Mostrar diálogo de confirmación
@@ -137,8 +158,8 @@ export default function CitaForm({
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
-      <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-semibold mb-4">
           {citaEditando ? 'Editar Cita' : 'Nueva Cita'}
         </h2>
@@ -184,6 +205,7 @@ export default function CitaForm({
                 onChange={(e) => setDni(e.target.value)}
                 className="flex-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={!!citaEditando}
+                required
               />
               {!esPacienteNuevo && (
                 <button
@@ -207,7 +229,7 @@ export default function CitaForm({
               value={nombres}
               onChange={(e) => setNombres(e.target.value)}
               className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={!esPacienteNuevo}
+              disabled={!esPacienteNuevo && !!idPaciente}
               required
             />
           </div>
@@ -221,9 +243,49 @@ export default function CitaForm({
               value={apellidos}
               onChange={(e) => setApellidos(e.target.value)}
               className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={!esPacienteNuevo}
+              disabled={!esPacienteNuevo && !!idPaciente}
               required
             />
+          </div>
+
+          {/* AGREGADO: Sección de contacto para recordatorios */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <h4 className="text-sm font-medium text-blue-900 mb-3 flex items-center">
+              📱 Contacto para Recordatorios
+            </h4>
+            <p className="text-xs text-blue-700 mb-3">
+              Proporciona al menos un medio de contacto para recibir recordatorios de la cita
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Teléfono/WhatsApp
+                </label>
+                <input
+                  type="tel"
+                  value={telefonoContacto}
+                  onChange={(e) => setTelefonoContacto(e.target.value)}
+                  placeholder="Ej: 987654321"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Para recordatorios por WhatsApp</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={emailContacto}
+                  onChange={(e) => setEmailContacto(e.target.value)}
+                  placeholder="ejemplo@email.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Para recordatorios por correo</p>
+              </div>
+            </div>
           </div>
 
           <div className="mb-4">
@@ -260,6 +322,7 @@ export default function CitaForm({
               type="text"
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}
+              placeholder="Ej: Limpieza dental, Consulta general..."
               className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -271,13 +334,16 @@ export default function CitaForm({
             <textarea
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
+              placeholder="Información adicional sobre la cita..."
               className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={4}
+              rows={3}
             />
           </div>
 
           {error && (
-            <div className="mb-4 text-red-600 text-sm">{error}</div>
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
           )}
 
           <div className="flex justify-end space-x-3">

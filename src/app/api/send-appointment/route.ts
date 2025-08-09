@@ -1,4 +1,5 @@
 // esto es para sacar citas desde la pagina principal 
+// app/api/send-appointment
 import { NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
 
