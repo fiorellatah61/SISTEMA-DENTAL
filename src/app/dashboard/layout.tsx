@@ -25,6 +25,7 @@ const sidebarItems = [
   { name: 'Procedimientos', href: '/dashboard/procedimientos', icon: Stethoscope },
   { name: 'Planes de Tratamiento', href: '/dashboard/planes-tratamiento', icon: ClipboardList },
   { name: 'Citas', href: '/dashboard/citas', icon: Calendar },
+  { name: 'Factura', href: '/dashboard/factura', icon: Calendar },
   { name: 'Configuración', href: '/dashboard/configuracion', icon: Settings },
 ]
 
