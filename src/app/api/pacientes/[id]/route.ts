@@ -110,6 +110,8 @@ export async function PUT(
       edad,
       sexo,
       telefono,
+      //AUMEMTADO EMAIL
+      email,
       lugarNacimiento,
       direccionActual,
       acompanante
@@ -125,6 +127,8 @@ export async function PUT(
         edad,
         sexo,
         telefono,
+         //AUMEMTADO EMAIL
+        email,
         lugarNacimiento,
         direccionActual,
         acompanante

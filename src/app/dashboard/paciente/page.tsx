@@ -46,6 +46,8 @@ export default function DatosAfiliacionPage() {
     lugarNacimiento: '',
     domicilioActual: '',
     celular: '',
+      //AUMEMTADO EMAIL
+        email: '' ,
     acompanante: ''
   })
 
@@ -98,6 +100,7 @@ export default function DatosAfiliacionPage() {
         lugarNacimiento: pacienteSeleccionado.lugarNacimiento || '',
         domicilioActual: pacienteSeleccionado.direccionActual || '',
         celular: pacienteSeleccionado.telefono || '',
+        email: pacienteSeleccionado.email || '',
         acompanante: pacienteSeleccionado.acompanante || ''
       })
     }
@@ -220,6 +223,7 @@ export default function DatosAfiliacionPage() {
           edad: formData.edad ? parseInt(formData.edad) : null,
           sexo: formData.sexo || null,
           telefono: formData.celular || null,
+          email: formData.email || null,
           lugarNacimiento: formData.lugarNacimiento || null,
           direccionActual: formData.domicilioActual || null,
           acompanante: formData.acompanante || null,
@@ -266,6 +270,7 @@ export default function DatosAfiliacionPage() {
       lugarNacimiento: '',
       domicilioActual: '',
       celular: '',
+      email: '',
       acompanante: ''
     })
     setPacienteSeleccionado(null)
@@ -469,6 +474,17 @@ export default function DatosAfiliacionPage() {
                     type="text"
                     name="celular"
                     value={formData.celular}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  />
+                </div>
+                  
+                  <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email:</label>
+                  <input
+                    type="text"
+                    name="email"
+                    value={formData.email}
                     onChange={handleInputChange}
                     className="w-full border border-gray-300 rounded-md px-3 py-2"
                   />

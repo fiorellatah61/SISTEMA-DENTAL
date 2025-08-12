@@ -109,6 +109,8 @@ export async function POST(request: NextRequest) {
       edad,
       sexo,
       telefono,
+        //AUMEMTADO EMAIL
+        email,
       lugarNacimiento,
       direccionActual,
       acompanante,
@@ -147,6 +149,8 @@ export async function POST(request: NextRequest) {
           edad,
           sexo,
           telefono,
+            //AUMEMTADO EMAIL
+        email,
           lugarNacimiento,
           direccionActual,
           acompanante,
