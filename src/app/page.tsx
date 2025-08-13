@@ -387,8 +387,8 @@ export default function HomePage() {
                   <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-teal-400 transition-colors duration-300">Dr. Carlos Mendoza</h3>
-              <p className="text-teal-400 mb-4 font-semibold text-lg">Director Médico</p>
+              <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-teal-400 transition-colors duration-300">Dr. Emil Jhordan Espinoza Condor</h3>
+              <p className="text-teal-400 mb-4 font-semibold text-lg">Cirujano Dentista</p>
               <p className="text-slate-300 leading-relaxed">20 años de experiencia en odontología general y estética dental.</p>
             </div>
             
@@ -398,8 +398,8 @@ export default function HomePage() {
                   <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-teal-400 transition-colors duration-300">Dra. Ana López</h3>
-              <p className="text-teal-400 mb-4 font-semibold text-lg">Ortodoncista</p>
+              <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-teal-400 transition-colors duration-300">Dra. Judith Eliana Espinoza Condor</h3>
+              <p className="text-teal-400 mb-4 font-semibold text-lg">Cirujano Dentista</p>
               <p className="text-slate-300 leading-relaxed">Especialista en ortodoncia invisible y tratamientos estéticos.</p>
             </div>
             
@@ -409,8 +409,8 @@ export default function HomePage() {
                   <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-teal-400 transition-colors duration-300">Dr. Miguel Torres</h3>
-              <p className="text-teal-400 mb-4 font-semibold text-lg">Implantólogo</p>
+              <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-teal-400 transition-colors duration-300">Dra. Karole Klein Espinoza Condor</h3>
+              <p className="text-teal-400 mb-4 font-semibold text-lg">Cirujano Dentista</p>
               <p className="text-slate-300 leading-relaxed">Experto en cirugía oral e implantes dentales avanzados.</p>
             </div>
           </div>
