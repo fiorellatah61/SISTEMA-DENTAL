@@ -367,18 +367,20 @@ export function useCitas() {
     new Date().toISOString().split('T')[0]
   )
 
-  const filtrarCitasDelDia = () => {
+ const filtrarCitasDelDia = () => {
     const fecha = new Date(fechaSeleccionada)
     const fechaInicio = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate())
     const fechaFin = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate() + 1)
     
     const citasFiltradas = citas.filter(cita => {
       const fechaCita = new Date(cita.fechaHora)
-      return fechaCita >= fechaInicio && fechaCita < fechaFin && cita.estado !== 'CANCELADA'
+      return fechaCita >= fechaInicio && fechaCita < fechaFin
     })
     
     setCitasDelDia(citasFiltradas)
   }
+
+  
 
   useEffect(() => {
     const registerUser = async () => {

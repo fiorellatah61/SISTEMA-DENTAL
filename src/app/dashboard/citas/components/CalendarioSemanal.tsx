@@ -1,4 +1,3 @@
-// app/dashboard/citas/components/CalendarioSemanal.tsx
 'use client'
 import { useState, useEffect } from 'react'
 
@@ -92,25 +91,25 @@ export default function CalendarioSemanal({
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
+    <div className="max-w-2xl mx-auto bg-white rounded-lg border border-gray-100 p-4 shadow-sm transition-shadow">
       {/* Header con navegación */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <button
           onClick={() => navegarSemana('anterior')}
-          className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
+          className="px-3 py-1 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
         >
           ← Anterior
         </button>
 
         <div className="text-center">
-          <h3 className="text-lg font-medium text-gray-900">
+          <h3 className="text-lg font-semibold text-gray-800">
             {diasSemana.length > 0 && (
               `${meses[diasSemana[0].getMonth()]} ${diasSemana[0].getFullYear()}`
             )}
           </h3>
           <button
             onClick={irHoy}
-            className="text-sm text-blue-600 hover:text-blue-800 focus:outline-none"
+            className="text-xs font-medium text-blue-500 hover:text-blue-700 focus:outline-none transition-colors"
           >
             Ir a hoy
           </button>
@@ -118,14 +117,14 @@ export default function CalendarioSemanal({
 
         <button
           onClick={() => navegarSemana('siguiente')}
-          className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
+          className="px-3 py-1 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
         >
           Siguiente →
         </button>
       </div>
 
       {/* Calendario semanal */}
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1.5">
         {diasSemana.map((fecha, index) => {
           const citasDelDia = contarCitasPorDia(fecha)
           const estaSeleccionado = esFechaSeleccionada(fecha)
@@ -135,23 +134,23 @@ export default function CalendarioSemanal({
             <button
               key={index}
               onClick={() => onFechaChange(fecha.toISOString().split('T')[0])}
-              className={`p-3 text-center rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              className={`p-2 text-center rounded-md border transition-all focus:outline-none focus:ring-2 focus:ring-blue-400 ${
                 estaSeleccionado
-                  ? 'bg-blue-600 text-white border-blue-600'
+                  ? 'bg-blue-500 text-white border-blue-500'
                   : esHoyDia
-                  ? 'bg-blue-50 text-blue-600 border-blue-200'
-                  : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                  ? 'bg-blue-50 text-blue-600 border-blue-100'
+                  : 'bg-white text-gray-600 border-gray-100 hover:bg-gray-50'
               }`}
             >
-              <div className="text-xs font-medium mb-1">
+              <div className="text-xs font-medium">
                 {nombresDias[index]}
               </div>
-              <div className="text-lg font-semibold">
+              <div className="text-base font-semibold">
                 {fecha.getDate()}
               </div>
               {citasDelDia > 0 && (
-                <div className={`text-xs mt-1 ${
-                  estaSeleccionado ? 'text-blue-100' : 'text-blue-600'
+                <div className={`text-xs mt-0.5 ${
+                  estaSeleccionado ? 'text-blue-100' : 'text-blue-500'
                 }`}>
                   {citasDelDia} cita{citasDelDia !== 1 ? 's' : ''}
                 </div>
@@ -162,12 +161,15 @@ export default function CalendarioSemanal({
       </div>
 
       {/* Leyenda */}
-      <div className="mt-4 text-xs text-gray-600 text-center">
-        <span className="inline-block w-3 h-3 bg-blue-600 rounded mr-1"></span>
-        Día seleccionado
-        <span className="mx-3">•</span>
-        <span className="inline-block w-3 h-3 bg-blue-50 border border-blue-200 rounded mr-1"></span>
-        Hoy
+      <div className="mt-3 text-xs font-medium text-gray-500 flex items-center justify-center gap-2">
+        <div className="flex items-center">
+          <span className="inline-block w-2.5 h-2.5 bg-blue-500 rounded-sm mr-1"></span>
+          Día seleccionado
+        </div>
+        <div className="flex items-center">
+          <span className="inline-block w-2.5 h-2.5 bg-blue-50 border border-blue-100 rounded-sm mr-1"></span>
+          Hoy
+        </div>
       </div>
     </div>
   )

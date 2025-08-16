@@ -438,7 +438,7 @@ export default function OdontogramaPage() {
           {/* Contenido del Tab 6 - Odontograma */}
           <div className="p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">6. ODONTOGRAMA</h2>
+              <h2 className="text-lg font-semibold text-gray-900">5. ODONTOGRAMA</h2>
               
               {/* Toggle para mostrar dientes temporales */}
               <div className="flex items-center space-x-4">

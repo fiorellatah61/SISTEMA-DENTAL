@@ -415,7 +415,7 @@ export default function ExamenesEvolucionPage() {
           <TabNavigation pacienteSeleccionado={pacienteSeleccionado} />
 
           <div className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">7. EXÁMENES COMPLEMENTARIOS Y EVOLUCIÓN</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">6. EXÁMENES COMPLEMENTARIOS Y EVOLUCIÓN</h2>
 
             {/* Sección Exámenes Complementarios */}
             <div className="mb-8">
