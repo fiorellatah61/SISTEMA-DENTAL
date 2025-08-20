@@ -26,6 +26,8 @@ const sidebarItems = [
   { name: 'Planes de Tratamiento', href: '/dashboard/planes-tratamiento', icon: ClipboardList },
   { name: 'Citas', href: '/dashboard/citas', icon: Calendar },
   { name: 'Factura', href: '/dashboard/factura', icon: Calendar },
+    // { name: 'Pagos', href: '/dashboard/Pagos', icon: ClipboardList },
+      { name: 'Servicios', href: '/dashboard/Servicios', icon: ClipboardList },
   { name: 'Configuración', href: '/dashboard/configuracion', icon: Settings },
 ]
 

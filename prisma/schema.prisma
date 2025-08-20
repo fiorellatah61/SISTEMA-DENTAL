@@ -447,6 +447,7 @@ model Servicio {
   estado           String    @db.VarChar(50)
   fechaPago        DateTime? @map("fecha_pago")
   metodoPago       String?   @map("metodo_pago") @db.VarChar(50)
+  referencia       String?   @db.VarChar(100) // NUEVO CAMPO
   descripcion      String?   @db.Text
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
