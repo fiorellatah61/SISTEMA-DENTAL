@@ -393,43 +393,57 @@ export default function MisionVisionPage() {
       </section>
 
       {/* Footer */}
-       <footer className="bg-gradient-to-t from-slate-950 to-slate-900 text-white py-3 border-t border-slate-800/50">
-         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-             <div className="flex justify-center mb-2 sm:mb-0">
-               <Logo 
-                 width={150} 
-                 height={50} 
-                 showText={false}
-                 linkTo="/dashboard"
-                 className="hover:opacity-80 transition-opacity duration-300"
-               />
-             </div>
-             <div className="text-center sm:text-left">
-               <p className="text-slate-400 text-base max-w-xs mx-auto sm:mx-0 leading-tight">
-                 Tu sonrisa es nuestra prioridad. Cuidado dental de calidad con tecnología de vanguardia.
-               </p>
-             </div>
-             <div className="flex justify-center sm:justify-end space-x-3">
-               <a href="#" className="w-9 h-9 bg-gradient-to-br from-slate-800 to-slate-900 rounded-full flex items-center justify-center text-teal-400 hover:text-white hover:from-teal-500 hover:to-black transition-all duration-300 border border-slate-700 hover:border-teal-400">
-                <img width="50" height="50" src="https://img.icons8.com/ios-filled/50/2DD4BF/facebook-new.png" alt="facebook-new"/>
-               </a>
-               <a href="#" className="w-9 h-9 bg-gradient-to-br from-slate-800 to-slate-900 rounded-full flex items-center justify-center text-teal-400 hover:text-white hover:from-teal-500 hover:to-black transition-all duration-300 border border-slate-700 hover:border-teal-400">
-                <img width="50" height="50" src="https://img.icons8.com/ios-glyphs/30/2DD4BF/whatsapp.png" alt="whatsapp"/>
-               </a>
- 
-                   <a href="#" className="w-9 h-9 bg-gradient-to-br from-slate-800 to-slate-900 rounded-full flex items-center justify-center text-teal-400 hover:text-white hover:from-teal-500 hover:to-black transition-all duration-300 border border-slate-700 hover:border-teal-400">
-                <img width="50" height="50" src="https://img.icons8.com/ios-filled/50/2DD4BF/tiktok--v1.png" alt="tiktok--v1"/>
-               </a>
-             </div>
-           </div>
-           <div className="mt-3 pt-2 border-t border-slate-800/50 text-center">
-             <p className="text-slate-500 text-xs">
-               &copy; 2025 Clínica Dental Sonríe. Todos los derechos reservados.
-             </p>
-           </div>
-         </div>
-       </footer>
+   <footer className="bg-gradient-to-t from-slate-950 to-slate-900 text-white py-3 border-t border-slate-800/50">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+      <div className="flex justify-center mb-2 sm:mb-0">
+        <Logo 
+          width={150} 
+          height={50} 
+          showText={false}
+          linkTo="/dashboard"
+          className="hover:opacity-80 transition-opacity duration-300"
+        />
+      </div>
+      <div className="text-center sm:text-left">
+        <p className="text-slate-400 text-base max-w-xs mx-auto sm:mx-0 leading-tight">
+          Tu sonrisa es nuestra prioridad. Cuidado dental de calidad con tecnología de vanguardia.
+        </p>
+      </div>
+      <div className="flex justify-center sm:justify-end space-x-3">
+        <a 
+          href="https://www.facebook.com/share/16sQFBT7Me/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="w-9 h-9 bg-gradient-to-br from-slate-800 to-slate-900 rounded-full flex items-center justify-center text-teal-400 hover:text-white hover:from-teal-500 hover:to-black transition-all duration-300 border border-slate-700 hover:border-teal-400"
+        >
+          <img width="50" height="50" src="https://img.icons8.com/ios-filled/50/2DD4BF/facebook-new.png" alt="facebook-new"/>
+        </a>
+        <a 
+          href="https://api.whatsapp.com/send?phone=%2B51938288058&fbclid=IwVERDUAMR99BleHRuA2FlbQIxMAABHvDTJQAXv4_8IfKTPlm_9g3C3_H93yedmxYjya7k20vso7JZMYHSoTCLdVDh_aem_qBbvWM5bJ7_WeQyOtlkqAQ" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="w-9 h-9 bg-gradient-to-br from-slate-800 to-slate-900 rounded-full flex items-center justify-center text-teal-400 hover:text-white hover:from-teal-500 hover:to-black transition-all duration-300 border border-slate-700 hover:border-teal-400"
+        >
+          <img width="50" height="50" src="https://img.icons8.com/ios-glyphs/30/2DD4BF/whatsapp.png" alt="whatsapp"/>
+        </a>
+        <a 
+          href="#" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="w-9 h-9 bg-gradient-to-br from-slate-800 to-slate-900 rounded-full flex items-center justify-center text-teal-400 hover:text-white hover:from-teal-500 hover:to-black transition-all duration-300 border border-slate-700 hover:border-teal-400"
+        >
+          <img width="50" height="50" src="https://img.icons8.com/ios-filled/50/2DD4BF/tiktok--v1.png" alt="tiktok--v1"/>
+        </a>
+      </div>
+    </div>
+    <div className="mt-3 pt-2 border-t border-slate-800/50 text-center">
+      <p className="text-slate-500 text-xs">
+        &copy; 2025 Clínica Dental Sonríe. Todos los derechos reservados.
+      </p>
+    </div>
+  </div>
+</footer>
     </div>
   )
 }
