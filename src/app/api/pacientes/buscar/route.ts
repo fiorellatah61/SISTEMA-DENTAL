@@ -1,9 +1,8 @@
+// // ANTES 
+// // // app/api/pacientes/buscar/route.ts
 
-// // Maneja GET (buscar)
-// ANTES 
-// // app/api/pacientes/buscar/route.ts
-// import { NextRequest, NextResponse } from 'next/server'
-// import { PrismaClient } from '../../../../generated/prisma'
+//  import { NextRequest, NextResponse } from 'next/server'
+// import { PrismaClient } from "@prisma/client"
 
 // const prisma = new PrismaClient()
 
@@ -44,12 +43,13 @@
 //   }
 // }
 
+// NUEVOI CON SINGLETON  -------------------import { prisma } from '@/lib/prisma'
 
+// ANTES 
+// // app/api/pacientes/buscar/route.ts
 
  import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
@@ -83,7 +83,5 @@ export async function GET(request: NextRequest) {
       { error: 'Error interno del servidor' },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect()
-  }
+  } 
 }

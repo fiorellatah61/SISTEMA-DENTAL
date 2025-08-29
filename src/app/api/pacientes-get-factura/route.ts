@@ -1,27 +1,29 @@
-// // AUMENTADO  ESTE GET PARA LAS FACTURAS 
-// // GET - Obtener todos los pacientes activos
+// // app/api/pacientes-get-factura/route.ts
 // import { NextRequest, NextResponse } from 'next/server'
-// import { PrismaClient } from "@prisma/client"
+// import { PrismaClient } from '@prisma/client'
 
-// const prisma = new PrismaClient()
+// const prisma3 = new PrismaClient()
+
 // export async function GET() {
 //   try {
-//     const pacientes = await prisma.paciente.findMany({
-//       where: {
-//         estado: 'ACTIVO'
-//       },
+//     const pacientes = await prisma3.paciente.findMany({
 //       select: {
 //         id: true,
 //         nombres: true,
 //         apellidos: true,
-//         dni: true
+//         dni: true,
+//         email: true,
+//         telefono: true
+//       },
+//       where: {
+//         estado: 'ACTIVO'
 //       },
 //       orderBy: [
 //         { nombres: 'asc' },
 //         { apellidos: 'asc' }
 //       ]
 //     })
-
+    
 //     return NextResponse.json(pacientes)
 //   } catch (error) {
 //     console.error('Error obteniendo pacientes:', error)
@@ -32,17 +34,16 @@
 //   }
 // }
 
-//  nuedvo---------------------------------
+
+//  NUEVO-CON SINGLETON-----    import { prisma } from '@/lib/prisma'
 
 // app/api/pacientes-get-factura/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma3 = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 export async function GET() {
   try {
-    const pacientes = await prisma3.paciente.findMany({
+    const pacientes = await prisma.paciente.findMany({
       select: {
         id: true,
         nombres: true,

@@ -1,7 +1,7 @@
-// ANTES 
-//  // app/api/pacientes/route.ts
+// //  // app/api/pacientes/route.ts
+
 // import { NextRequest, NextResponse } from 'next/server'
-// import { PrismaClient } from '../../../generated/prisma'
+// import { PrismaClient } from "@prisma/client"
 
 // const prisma = new PrismaClient()
 
@@ -17,6 +17,8 @@
 //       edad,
 //       sexo,
 //       telefono,
+//         //AUMEMTADO EMAIL
+//         email,
 //       lugarNacimiento,
 //       direccionActual,
 //       acompanante,
@@ -55,6 +57,8 @@
 //           edad,
 //           sexo,
 //           telefono,
+//             //AUMEMTADO EMAIL
+//         email,
 //           lugarNacimiento,
 //           direccionActual,
 //           acompanante,
@@ -90,12 +94,12 @@
 //   }
 // }
 
-// app/api/pacientes/route.ts
+// NUEVO----------CON SINGLETON---   import { prisma } from '@/lib/prisma'
+
+//  // app/api/pacientes/route.ts
 
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
@@ -181,8 +185,5 @@ export async function POST(request: NextRequest) {
       { error: 'Error interno del servidor' },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect()
-  }
+  } 
 }
-

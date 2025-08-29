@@ -466,7 +466,7 @@ model Factura {
   monto                 Decimal  @db.Decimal(10, 2)
   fechaEmision          DateTime @default(now()) @map("fecha_emision")
   metodoPago            String?  @map("metodo_pago") @db.VarChar(50)
-  referencia            String?  @db.VarChar(100)
+  referencia            String?  @db.VarChar(100) 
   estado                EstadoFactura @default(PENDIENTE)
   
   // Campo para archivo PDF de la factura
