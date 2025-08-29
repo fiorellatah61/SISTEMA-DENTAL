@@ -840,11 +840,35 @@
 // */
 
 //NUEVO-----------------------------------
-
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma' // ✅ Usar singleton
+import { prisma } from '@/lib/prisma'
 import { auth } from '@clerk/nextjs/server'
 import nodemailer from 'nodemailer'
+import { toZonedTime, formatInTimeZone } from 'date-fns-tz'
+
+// Definir tipos para Cita y Paciente
+interface Paciente {
+  id: string
+  nombres: string
+  apellidos: string
+  dni: string
+  telefono?: string | null
+  email?: string | null
+}
+
+interface Cita {
+  id: string
+  idPaciente: string
+  fechaHora: Date
+  estado: 'SOLICITADA' | 'CONFIRMADA' | 'MODIFICADA' | 'CANCELADA'
+  motivo?: string | null
+  observaciones?: string | null
+  paciente: Paciente
+  createdAt: Date
+  updatedAt: Date
+  telefonoContacto?: string | null
+  emailContacto?: string | null
+}
 
 // POST - Enviar recordatorios automáticos
 export async function POST(request: NextRequest) {
@@ -853,6 +877,7 @@ export async function POST(request: NextRequest) {
   
   let attempts = 0
   const maxAttempts = 3
+  const timeZone = 'America/Lima' // Zona horaria para Perú
 
   while (attempts < maxAttempts) {
     try {
@@ -865,7 +890,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
       }
 
-      // ✅ Verificar variables de entorno críticas
+      // Verificar variables de entorno críticas
       const requiredEnvs = ['DATABASE_URL', 'EMAIL_USER', 'EMAIL_PASS']
       const missingEnvs = requiredEnvs.filter(env => !process.env[env])
       
@@ -878,22 +903,29 @@ export async function POST(request: NextRequest) {
       }
 
       console.log('📋 Verificando conexión a base de datos...')
-      // ✅ Probar conexión a BD
       await prisma.$queryRaw`SELECT 1`
       console.log('✅ Conexión a BD exitosa')
 
-      // Calcular fecha de mañana
-      const ahora = new Date()
-      const manana = new Date()
+      // Calcular fecha de mañana en la zona horaria deseada
+      const ahora = toZonedTime(new Date(), timeZone)
+      const manana = new Date(ahora)
       manana.setDate(ahora.getDate() + 1)
       
-      const inicioDia = new Date(manana.getFullYear(), manana.getMonth(), manana.getDate(), 0, 0, 0)
-      const finDia = new Date(manana.getFullYear(), manana.getMonth(), manana.getDate(), 23, 59, 59)
+      const inicioDia = toZonedTime(
+        new Date(manana.getFullYear(), manana.getMonth(), manana.getDate(), 0, 0, 0),
+        timeZone
+      )
+      const finDia = toZonedTime(
+        new Date(manana.getFullYear(), manana.getMonth(), manana.getDate(), 23, 59, 59),
+        timeZone
+      )
 
-      console.log(`🔍 Buscando citas para: ${manana.toLocaleDateString('es-PE')}`)
+      // Log para depuración
+      console.log(`🔍 Buscando citas para: ${formatInTimeZone(manana, timeZone, 'dd/MM/yyyy')}`)
+      console.log(`📅 Rango de búsqueda: ${inicioDia.toISOString()} - ${finDia.toISOString()}`)
 
       // Buscar citas para mañana con timeout
-      const citasManana = await Promise.race([
+      const citasManana: Cita[] = await Promise.race([
         prisma.cita.findMany({
           where: {
             fechaHora: {
@@ -916,15 +948,34 @@ export async function POST(request: NextRequest) {
               }
             }
           }
-        }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout en consulta BD')), 30000)
+        }) as Promise<Cita[]>,
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout en consulta BD')), 60000)
         )
-      ]) as any[]
+      ])
 
+      // Log para depuración: listar citas encontradas
       console.log(`📋 Encontradas ${citasManana.length} citas para mañana`)
+      citasManana.forEach((cita, index) => {
+        console.log(`Cita ${index + 1}: ID=${cita.id}, Fecha=${cita.fechaHora.toISOString()}, Estado=${cita.estado}`)
+      })
 
       if (citasManana.length === 0) {
+        // Log adicional para todas las citas (para depuración)
+        const todasCitas = await prisma.cita.findMany({
+          where: {
+            estado: {
+              in: ['SOLICITADA', 'CONFIRMADA']
+            }
+          },
+          select: {
+            id: true,
+            fechaHora: true,
+            estado: true
+          }
+        })
+        console.log('📋 Todas las citas disponibles:', JSON.stringify(todasCitas, null, 2))
+        
         return NextResponse.json({
           success: true,
           message: 'No hay citas programadas para mañana',
@@ -943,9 +994,9 @@ export async function POST(request: NextRequest) {
           console.log(`\n🔄 Procesando: ${cita.paciente.nombres} ${cita.paciente.apellidos}`)
 
           // Verificar recordatorio existente
-          const hoyInicio = new Date()
+          const hoyInicio = toZonedTime(new Date(), timeZone)
           hoyInicio.setHours(0, 0, 0, 0)
-          const hoyFin = new Date()
+          const hoyFin = toZonedTime(new Date(), timeZone)
           hoyFin.setHours(23, 59, 59, 999)
 
           const recordatorioExistente = await prisma.recordatorio.findFirst({
@@ -1054,29 +1105,21 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// ✅ FUNCIÓN EMAIL CON REINTENTOS
-async function enviarEmailConReintentos(cita: any, email: string) {
-  const maxIntentos = 2
-  
+async function enviarEmailConReintentos(cita: Cita, email: string) {
+  const maxIntentos = 3
+  const timeZone = 'America/Lima'
+
   for (let intento = 1; intento <= maxIntentos; intento++) {
     try {
-      console.log(`📧 Intento ${intento}/${maxIntentos} enviando email`)
+      console.log(`📧 Intento ${intento}/${maxIntentos} enviando email a ${email}`)
       
       if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
         throw new Error('Credenciales de email no configuradas')
       }
 
-      const fechaCita = new Date(cita.fechaHora)
-      const fechaFormateada = fechaCita.toLocaleDateString('es-PE', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      })
-      const horaFormateada = fechaCita.toLocaleTimeString('es-PE', {
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+      const fechaCita = toZonedTime(new Date(cita.fechaHora), timeZone)
+      const fechaFormateada = formatInTimeZone(fechaCita, timeZone, 'eeee, d MMMM yyyy')
+      const horaFormateada = formatInTimeZone(fechaCita, timeZone, 'HH:mm')
 
       const transporter = nodemailer.createTransport({
         service: 'gmail',
@@ -1087,20 +1130,21 @@ async function enviarEmailConReintentos(cita: any, email: string) {
         pool: true,
         maxConnections: 5,
         maxMessages: 100,
-        rateDelta: 20000,
-        rateLimit: 5,
-        connectionTimeout: 60000,
-        greetingTimeout: 30000,
-        socketTimeout: 60000
+        rateDelta: 30000,
+        rateLimit: 3,
+        connectionTimeout: 90000,
+        greetingTimeout: 60000,
+        socketTimeout: 90000
       })
 
-      // ✅ Verificar conexión antes de enviar
+      console.log('🔍 Verificando conexión con Gmail...')
       await Promise.race([
         transporter.verify(),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout verificando email')), 10000)
+          setTimeout(() => reject(new Error('Timeout verificando email')), 30000)
         )
       ])
+      console.log('✅ Conexión verificada')
 
       const mailOptions = {
         from: process.env.EMAIL_USER,
@@ -1122,10 +1166,11 @@ async function enviarEmailConReintentos(cita: any, email: string) {
         `
       }
 
+      console.log('📤 Enviando el email...')
       await Promise.race([
         transporter.sendMail(mailOptions),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout enviando email')), 30000)
+          setTimeout(() => reject(new Error('Timeout enviando email')), 60000)
         )
       ])
       
@@ -1145,8 +1190,7 @@ async function enviarEmailConReintentos(cita: any, email: string) {
         }
       }
       
-      // Esperar antes del siguiente intento
-      await new Promise(resolve => setTimeout(resolve, 2000 * intento))
+      await new Promise(resolve => setTimeout(resolve, 5000 * intento))
     }
   }
   
