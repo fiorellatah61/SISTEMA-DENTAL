@@ -1,4 +1,5 @@
 
+// // lib/prisma.ts
 // import { PrismaClient } from '@prisma/client'
 
 // const globalForPrisma = globalThis as unknown as {
@@ -6,27 +7,43 @@
 // }
 
 // export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-//   log: ['error', 'warn'],
-//   errorFormat: 'pretty',
+//   log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+//   errorFormat: 'minimal',
 // })
 
-// if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+// if (process.env.NODE_ENV !== 'production') {
+//   globalForPrisma.prisma = prisma
+// }
 
 
-// lib/prisma.ts - Configuración optimizada de Prisma
-// nuevo---------------
-// lib/prisma.ts
-import { PrismaClient } from '@prisma/client'
+// lib/prisma.ts - Configuración optimizada para Railway
+import { PrismaClient } from '@prisma/client';
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
+declare global {
+  var prisma: PrismaClient | undefined;
 }
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-  errorFormat: 'minimal',
-})
+const createPrismaClient = () => {
+  return new PrismaClient({
+    log: ['error', 'warn'], // Solo errores y warnings en producción
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
+    // Configuraciones optimizadas para Railway
+    ...(process.env.NODE_ENV === 'production' && {
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL + '?connection_limit=5&pool_timeout=10&socket_timeout=10',
+        },
+      },
+    })
+  });
+};
+
+export const prisma = globalThis.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma
+  globalThis.prisma = prisma;
 }

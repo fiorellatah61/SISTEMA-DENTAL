@@ -580,583 +580,546 @@
 
 //  NUEVO---------------------------------
 // // 
+// // 
 
 // src/app/dashboard/page.tsx
+// Propósito: Componente principal del dashboard que muestra estadísticas, gráficos y lista de pacientes.
+// Usa hooks de React para cargar datos de APIs y renderizar UI interactiva con búsqueda y paginación.
+
 // src/app/dashboard/page.tsx
+// Propósito: Componente principal del dashboard que muestra estadísticas, gráficos y lista de pacientes.
+// Usa hooks de React para cargar datos de APIs y renderizar UI interactiva con búsqueda y paginación.
 
-'use client'
+// src/app/dashboard/page.tsx
+// Propósito: Componente principal del dashboard que muestra estadísticas, gráficos y lista de pacientes.
+// Usa hooks de React para cargar datos de APIs y renderizar UI interactiva con búsqueda y paginación.
 
-import { useState, useEffect, useCallback } from 'react'
+// src/app/dashboard/page.tsx
+"use client"
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Users, 
-  Calendar, 
-  FileText, 
-  DollarSign, 
-  Activity,
-  TrendingUp,
-  Clock,
-  AlertCircle,
-  CheckCircle2,
-  XCircle,
-  Search,
-  Phone,
-  Mail,
-  User,
-  Stethoscope,
-  RefreshCw,
-  Wifi,
-  WifiOff
-} from 'lucide-react'
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  AreaChart,
-  Area
-} from 'recharts'
+  Users, Calendar, FileText, DollarSign, Clock, 
+  UserCheck, AlertCircle, Activity,
+  Search, Phone, Mail, User, ChevronLeft, ChevronRight,
+  CheckCircle, XCircle, RefreshCw
+} from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
-// Interfaces para tipado
-interface DashboardStats {
-  totalPacientes: number
-  pacientesNuevosHoy: number
-  citasHoy: number
-  citasPendientes: number
-  ingresosMensuales: number
-  fichasActivas: number
-  serviciosActivos: number
-  serviciosPendientes: number
-  serviciosVencidos: number
-  serviciosPagados: number
-  totalTratamientos: number
-  planesTratamiento: number
-  facturasPendientes: number
+// Interfaces
+interface Stats {
+  totalPacientes: number;
+  pacientesActivos: number;
+  citasHoy: number;
+  citasSemana: number;
+  citasConfirmadas: number;
+  fichasActivas: number;
+  fichasMes: number;
+  serviciosPendientes: number;
+  facturasPendientes: number;
+  montoFacturasPendientes: number;
+  ingresosMes: number;
+  crecimientoIngresos: number;
   citasPorEstado: {
-    confirmadas: number
-    pendientes: number
-    canceladas: number
-    modificadas: number
-  }
+    confirmadas: number;
+    pendientes: number;
+    modificadas: number;
+    canceladas: number;
+  };
 }
 
-interface CitasPorMes {
-  mes: string
-  citas: number
-  ingresos: number
-}
-
-interface PacientesPorEdad {
-  rango: string
-  cantidad: number
-  porcentaje: number
-}
-
-interface TratamientosMasComunes {
-  tratamiento: string
-  cantidad: number
-  ingresos: number
-}
-
-interface Paciente {
-  id: string
-  nombres: string
-  apellidos: string
-  dni: string
-  fechaNacimiento: string
-  edad: number
-  sexo: string
-  telefono: string
-  email: string
-  estado: string
-  createdAt: string
+interface PacienteWithCount {
+  id: string;
+  nombres: string;
+  apellidos: string;
+  dni: string;
+  fechaNacimiento?: Date;
+  edad?: number;
+  sexo?: 'M' | 'F' | 'OTRO';
+  telefono?: string;
+  email?: string;
+  estado: 'ACTIVO' | 'INACTIVO';
+  createdAt: Date;
   _count: {
-    fichasOdontologicas: number
-    citas: number
-  }
+    fichasOdontologicas: number;
+    citas: number;
+  };
 }
 
-interface PacientesResponse {
-  pacientes: Paciente[]
-  total: number
-  currentPage: number
-  totalPages: number
+interface PacientesData {
+  pacientes: PacienteWithCount[];
+  total: number;
+  currentPage: number;
+  totalPages: number;
+  hasMore: boolean;
 }
 
-// Función para fetch con timeout aumentado y mejor manejo de errores
-const fetchWithTimeout = async (url: string, options: RequestInit = {}): Promise<Response | null> => {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 35000); // 35 segundos
+interface CitasData {
+  fecha: string;
+  citas: number;
+}
 
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal
-    });
-    
-    clearTimeout(timeoutId);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    
-    return response;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    
-    if (error instanceof DOMException && error.name === 'AbortError') {
-      console.error(`Timeout en ${url} - La consulta tomó más de 35 segundos`);
-      return null;
-    }
-    
-    console.error(`Error fetching ${url}:`, error);
-    return null;
-  }
-};
+interface IngresosData {
+  mes: string;
+  ingresos: number;
+}
 
-export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalPacientes: 0,
-    pacientesNuevosHoy: 0,
-    citasHoy: 0,
-    citasPendientes: 0,
-    ingresosMensuales: 0,
-    fichasActivas: 0,
-    serviciosActivos: 0,
-    serviciosPendientes: 0,
-    serviciosVencidos: 0,
-    serviciosPagados: 0,
-    totalTratamientos: 0,
-    planesTratamiento: 0,
-    facturasPendientes: 0,
-    citasPorEstado: {
-      confirmadas: 0,
-      pendientes: 0,
-      canceladas: 0,
-      modificadas: 0
-    }
-  })
+interface ServiciosData {
+  name: string;
+  cantidad: number;
+}
 
-  const [citasPorMes, setCitasPorMes] = useState<CitasPorMes[]>([])
-  const [pacientesPorEdad, setPacientesPorEdad] = useState<PacientesPorEdad[]>([])
-  const [tratamientosMasComunes, setTratamientosMasComunes] = useState<TratamientosMasComunes[]>([])
-  const [pacientesData, setPacientesData] = useState<PacientesResponse>({
-    pacientes: [],
-    total: 0,
-    currentPage: 1,
-    totalPages: 0
-  })
+interface CustomLabelProps {
+  name?: string;
+  percent?: number;
+  cx?: number;
+  cy?: number;
+  midAngle?: number;
+  innerRadius?: number;
+  outerRadius?: number;
+  value?: number;
+}
+
+// Estados de carga independientes
+interface LoadingStates {
+  stats: boolean;
+  citasChart: boolean;
+  ingresos: boolean;
+  servicios: boolean;
+  pacientes: boolean;
+}
+
+const Dashboard = () => {
+  // Estados principales
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [citasData, setCitasData] = useState<CitasData[]>([]);
+  const [pacientesData, setPacientesData] = useState<PacientesData>({ 
+    pacientes: [], total: 0, currentPage: 1, totalPages: 1, hasMore: false 
+  });
+  const [ingresosMensuales, setIngresosMensuales] = useState<IngresosData[]>([]);
+  const [estadisticasServicios, setEstadisticasServicios] = useState<ServiciosData[]>([]);
   
-  const [loading, setLoading] = useState(true)
-  const [loadingPacientes, setLoadingPacientes] = useState(false)
-  const [busqueda, setBusqueda] = useState('')
-  const [paginaActual, setPaginaActual] = useState(1)
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'retrying'>('connected')
-  const [errorMessages, setErrorMessages] = useState<string[]>([])
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
+  // Estados de carga independientes
+  const [loading, setLoading] = useState<LoadingStates>({
+    stats: true,
+    citasChart: true,
+    ingresos: true,
+    servicios: true,
+    pacientes: true
+  });
+  
+  // Estados de error - Permitir string | null
+  const [errors, setErrors] = useState<{[key: string]: string | null}>({});
+  
+  // Estados de búsqueda
+  const [busqueda, setBusqueda] = useState('');
+  const [paginaActual, setPaginaActual] = useState(1);
 
-  // Función para agregar mensajes de error
-  const addErrorMessage = useCallback((message: string) => {
-    setErrorMessages(prev => {
-      const newMessages = [...prev, message].slice(-5); // Mantener solo los últimos 5 errores
-      return newMessages;
-    });
-    
-    // Remover el mensaje después de 10 segundos
-    setTimeout(() => {
-      setErrorMessages(prev => prev.slice(1));
-    }, 10000);
-  }, []);
-
-  // Función mejorada para cargar datos con reintentos y timeouts progresivos
-  const cargarDatosDashboard = useCallback(async () => {
-    try {
-      setLoading(true)
-      setConnectionStatus('retrying')
-      
-      const endpoints = [
-        { url: '/api/dashboard/stats', setter: setStats, name: 'Estadísticas', priority: 1 },
-        { url: '/api/dashboard/citas-por-mes', setter: setCitasPorMes, name: 'Citas por mes', priority: 2 },
-        { url: '/api/dashboard/pacientes-por-edad', setter: setPacientesPorEdad, name: 'Pacientes por edad', priority: 3 },
-        { url: '/api/dashboard/tratamientos-comunes', setter: setTratamientosMasComunes, name: 'Tratamientos comunes', priority: 4 }
-      ];
-
-      let successCount = 0;
-      let attemptCount = 0;
-      const maxAttempts = 2;
-      
-      // Procesar endpoints con reintentos
-      for (const { url, setter, name, priority } of endpoints) {
-        let success = false;
-        attemptCount = 0;
-        
-        while (!success && attemptCount < maxAttempts) {
-          attemptCount++;
-          console.log(`Intentando cargar ${name} (intento ${attemptCount}/${maxAttempts})`);
-          
-          const response = await fetchWithTimeout(url);
-          
-          if (response) {
-            try {
-              const data = await response.json();
-              setter(data);
-              successCount++;
-              success = true;
-              console.log(`Éxito: ${name} cargado`);
-            } catch (parseError) {
-              console.error(`Error parsing JSON for ${name}:`, parseError);
-              if (attemptCount === maxAttempts) {
-                addErrorMessage(`Error procesando datos de ${name}`);
-              }
-            }
-          } else {
-            console.log(`Fallo al cargar ${name} (intento ${attemptCount})`);
-            if (attemptCount === maxAttempts) {
-              addErrorMessage(`No se pudieron cargar ${name} después de ${maxAttempts} intentos`);
-            }
-          }
-          
-          // Pausa progresiva entre intentos
-          if (!success && attemptCount < maxAttempts) {
-            const delay = attemptCount * 1500; // 1.5s, 3s, etc.
-            console.log(`Esperando ${delay}ms antes del siguiente intento...`);
-            await new Promise((resolve) => setTimeout(resolve, delay));
-          }
-        }
-        
-        // Pausa entre diferentes endpoints para no sobrecargar
-        if (priority < endpoints.length) {
-          await new Promise((resolve) => setTimeout(resolve, 800));
-        }
-      }
-
-      if (successCount > 0) {
-        setConnectionStatus('connected');
-        setLastUpdate(new Date());
-        console.log(`Dashboard cargado: ${successCount}/${endpoints.length} endpoints exitosos`);
-      } else {
-        setConnectionStatus('disconnected');
-        addErrorMessage('No se pudieron cargar los datos del dashboard');
-      }
-      
-    } catch (error) {
-      console.error('Error general al cargar datos del dashboard:', error);
-      setConnectionStatus('disconnected');
-      addErrorMessage('Error de conexión general');
-    } finally {
-      setLoading(false);
-    }
-  }, [addErrorMessage]);
-
-  // Función optimizada para cargar pacientes con timeout mayor
-  const cargarPacientes = useCallback(async (pagina: number = 1, buscar: string = '') => {
-    try {
-      setLoadingPacientes(true)
-      
-      const url = `/api/dashboard/pacientes-lista?page=${pagina}&limit=10&search=${encodeURIComponent(buscar)}`;
-      console.log(`Cargando pacientes: página ${pagina}, búsqueda: "${buscar}"`);
-      
-      const response = await fetchWithTimeout(url);
-      
-      if (response) {
-        const data = await response.json();
-        setPacientesData(data);
-        console.log(`Pacientes cargados: ${data.pacientes.length} encontrados`);
-      } else {
-        addErrorMessage('Error al cargar lista de pacientes - Timeout o error de red');
-        console.log('Error al cargar pacientes');
-      }
-    } catch (error) {
-      console.error('Error al cargar pacientes:', error);
-      addErrorMessage('Error de conexión al cargar pacientes');
-    } finally {
-      setLoadingPacientes(false);
-    }
-  }, [addErrorMessage]);
-
-  // Auto-refresh más inteligente (solo si no hay errores recientes)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (connectionStatus === 'connected' && errorMessages.length === 0) {
-        console.log('Auto-refresh del dashboard');
-        cargarDatosDashboard();
-      } else {
-        console.log('Auto-refresh pausado debido a errores de conexión');
-      }
-    }, 10 * 60 * 1000); // Aumentado a 10 minutos para reducir carga
-
-    return () => clearInterval(interval);
-  }, [cargarDatosDashboard, connectionStatus, errorMessages.length]);
-
-  useEffect(() => {
-    cargarDatosDashboard()
-    cargarPacientes()
-  }, [cargarDatosDashboard, cargarPacientes])
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      cargarPacientes(paginaActual, busqueda)
-    }, 500) // Aumentado para evitar demasiadas llamadas
-    return () => clearTimeout(timer)
-  }, [busqueda, paginaActual, cargarPacientes])
-
-  const formatearFecha = (fecha: string) => {
-    return new Date(fecha).toLocaleDateString('es-PE', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
-  }
-
-  const formatearMoneda = (valor: number) => {
-    return `S/ ${valor.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`
-  }
-
-  const COLORES_GRAFICOS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
-
-  const TarjetaEstadistica = ({ 
-    titulo, 
-    valor, 
-    descripcion, 
-    icono: Icono, 
-    tendencia, 
-    color = 'bg-blue-500',
-    colorTexto = 'text-blue-600'
-  }: {
-    titulo: string
-    valor: string | number
-    descripcion: string
-    icono: any
-    tendencia?: string
-    color?: string
-    colorTexto?: string
-  }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300">
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-500 mb-1">{titulo}</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {typeof valor === 'number' && titulo.includes('Ingresos') 
-              ? formatearMoneda(valor) 
-              : valor.toLocaleString()}
-          </p>
-          <div className="flex items-center mt-2">
-            {tendencia && (
-              <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-            )}
-            <p className="text-xs text-gray-600">{descripcion}</p>
-          </div>
-        </div>
-        <div className={`${color} p-3 rounded-lg`}>
-          <Icono className="h-6 w-6 text-white" />
-        </div>
-      </div>
-    </div>
-  )
-
-  // Componente de estado de conexión mejorado
-  const EstadoConexion = () => (
-    <div className="flex items-center space-x-2">
-      {connectionStatus === 'connected' && (
-        <>
-          <Wifi className="h-5 w-5 text-green-600" />
-          <span className="text-green-700 font-medium">Conectado</span>
-          <span className="text-xs text-gray-500">
-            Actualizado: {lastUpdate.toLocaleTimeString()}
-          </span>
-        </>
-      )}
-      {connectionStatus === 'disconnected' && (
-        <>
-          <WifiOff className="h-5 w-5 text-red-600" />
-          <span className="text-red-700 font-medium">Desconectado</span>
-          <span className="text-xs text-red-500">
-            APIs lentas detectadas
-          </span>
-        </>
-      )}
-      {connectionStatus === 'retrying' && (
-        <>
-          <RefreshCw className="h-5 w-5 text-yellow-600 animate-spin" />
-          <span className="text-yellow-700 font-medium">Cargando...</span>
-          <span className="text-xs text-yellow-600">
-            Esto puede tomar hasta 35 segundos
-          </span>
-        </>
-      )}
-      <button
-        onClick={() => {
-          console.log('Refresh manual iniciado');
-          cargarDatosDashboard();
-        }}
-        disabled={connectionStatus === 'retrying'}
-        className="ml-2 p-1 rounded hover:bg-gray-100 disabled:opacity-50"
-        title="Actualizar datos manualmente"
-      >
-        <RefreshCw className={`h-4 w-4 text-gray-600 ${connectionStatus === 'retrying' ? 'animate-spin' : ''}`} />
-      </button>
-    </div>
-  )
-
-  // Componente de alertas de error
-  const AlertasError = () => {
-    if (errorMessages.length === 0) return null;
-
-    return (
-      <div className="fixed top-4 right-4 z-50 space-y-2">
-        {errorMessages.map((message, index) => (
-          <div
-            key={index}
-            className="bg-red-50 border border-red-200 rounded-lg p-3 shadow-lg max-w-sm animate-slide-in-right"
-          >
-            <div className="flex items-center">
-              <AlertCircle className="h-4 w-4 text-red-600 mr-2" />
-              <span className="text-sm text-red-800">{message}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
+  // Función genérica para manejar errores y loading
+  const updateLoadingState = (key: keyof LoadingStates, isLoading: boolean) => {
+    setLoading(prev => ({ ...prev, [key]: isLoading }));
   };
 
-  if (loading && connectionStatus !== 'connected') {
+  const setError = (key: string, error: string | null) => {
+    setErrors(prev => {
+      if (error === null) {
+        const newErrors = { ...prev };
+        delete newErrors[key];
+        return newErrors;
+      }
+      return { ...prev, [key]: error };
+    });
+  };
+
+  // Función genérica para fetch con retry automático
+  const fetchWithRetry = async <T,>(
+    url: string,
+    key: keyof LoadingStates,
+    setter: (data: T) => void,
+    fallbackData?: T,
+    maxRetries: number = 2
+  ) => {
+    updateLoadingState(key, true);
+    setError(key, null);
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+        const response = await fetch(url, { 
+          signal: controller.signal,
+          headers: {
+            'Cache-Control': 'no-cache',
+          }
+        });
+        
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        setter(data);
+        updateLoadingState(key, false);
+        return;
+
+      } catch (error: any) {
+        console.warn(`Intento ${attempt + 1}/${maxRetries} falló para ${url}:`, error.message);
+        
+        if (attempt === maxRetries - 1) {
+          // Último intento fallido
+          if (fallbackData) {
+            setter(fallbackData);
+          }
+          setError(key, `Error al cargar ${key}: ${error.message}`);
+          updateLoadingState(key, false);
+        } else {
+          // Esperar antes del siguiente intento
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        }
+      }
+    }
+  };
+
+  // Función para recargar datos específicos
+  const reloadData = useCallback((type?: keyof LoadingStates) => {
+    if (!type || type === 'stats') {
+      fetchWithRetry('/api/dashboard/stats', 'stats', setStats, {
+        totalPacientes: 0,
+        pacientesActivos: 0,
+        citasHoy: 0,
+        citasSemana: 0,
+        citasConfirmadas: 0,
+        fichasActivas: 0,
+        fichasMes: 0,
+        serviciosPendientes: 0,
+        facturasPendientes: 0,
+        montoFacturasPendientes: 0,
+        ingresosMes: 0,
+        crecimientoIngresos: 0,
+        citasPorEstado: { confirmadas: 0, pendientes: 0, modificadas: 0, canceladas: 0 }
+      });
+    }
+
+    if (!type || type === 'citasChart') {
+      fetchWithRetry('/api/dashboard/citas-chart', 'citasChart', setCitasData, []);
+    }
+
+    if (!type || type === 'ingresos') {
+      fetchWithRetry('/api/dashboard/ingresos-mensuales', 'ingresos', setIngresosMensuales, []);
+    }
+
+    if (!type || type === 'servicios') {
+      fetchWithRetry('/api/dashboard/servicios-stats', 'servicios', setEstadisticasServicios, []);
+    }
+  }, []);
+
+  // Función específica para pacientes (con parámetros)
+  const loadPacientes = useCallback(() => {
+    const params = new URLSearchParams({
+      page: paginaActual.toString(),
+      search: busqueda,
+      limit: '10'
+    });
+    
+    fetchWithRetry(
+      `/api/dashboard/pacientes?${params}`, 
+      'pacientes', 
+      setPacientesData,
+      { pacientes: [], total: 0, currentPage: 1, totalPages: 1, hasMore: false }
+    );
+  }, [paginaActual, busqueda]);
+
+  // Efectos de carga inicial
+  useEffect(() => {
+    reloadData();
+  }, [reloadData]);
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(loadPacientes, busqueda ? 500 : 0);
+    return () => clearTimeout(debounceTimer);
+  }, [loadPacientes]);
+
+  // Funciones de utilidad
+  const formatearFecha = (fecha: string | Date) => {
+    return new Date(fecha).toLocaleDateString('es-PE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  const formatearMoneda = (cantidad: number) => {
+    return new Intl.NumberFormat('es-PE', {
+      style: 'currency',
+      currency: 'PEN'
+    }).format(cantidad);
+  };
+
+  const renderCustomizedLabel = (props: CustomLabelProps) => {
+    const { name, percent } = props;
+    return `${name}: ${((percent || 0) * 100).toFixed(0)}%`;
+  };
+
+  const coloresPie = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+
+  // Componente de estado de carga
+  const LoadingSpinner = ({ size = "h-8 w-8" }: { size?: string }) => (
+    <div className="flex items-center justify-center">
+      <div className={`animate-spin rounded-full ${size} border-b-2 border-blue-500`}></div>
+    </div>
+  );
+
+  // Componente de error con retry
+  const ErrorDisplay = ({ error, onRetry, type }: { error: string; onRetry: () => void; type: string }) => (
+    <div className="flex flex-col items-center justify-center py-8 text-center">
+      <AlertCircle className="h-12 w-12 text-red-300 mb-4" />
+      <p className="text-red-600 mb-4">{error}</p>
+      <button
+        onClick={onRetry}
+        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+      >
+        <RefreshCw className="h-4 w-4" />
+        Reintentar
+      </button>
+    </div>
+  );
+
+  // Verificar si todo está cargando por primera vez
+  const isInitialLoading = Object.values(loading).every(val => val === true);
+
+  if (isInitialLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <span className="text-gray-600 font-medium">Cargando dashboard...</span>
-          <p className="text-sm text-gray-500 mt-2">
-            {connectionStatus === 'retrying' ? 'Reintentando conexión...' : 'Conectando a la base de datos...'}
-          </p>
-          <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-left max-w-md">
-            <div className="flex items-center text-yellow-800">
-              <Clock className="h-4 w-4 mr-2" />
-              <span className="text-sm font-medium">Tiempo de carga extendido</span>
-            </div>
-            <p className="text-xs text-yellow-700 mt-1">
-              Las consultas complejas pueden tomar hasta 35 segundos. Por favor espera...
-            </p>
-          </div>
+          <LoadingSpinner size="h-12 w-12" />
+          <span className="ml-4 text-lg">Cargando dashboard...</span>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AlertasError />
-      
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen bg-gray-50 p-4 lg:p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header con botón de recarga */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-gray-600 mt-1">Clínica Dental - Resumen General</p>
+              <h1 className="text-3xl font-bold text-gray-900">Dashboard Clínica Dental</h1>
+              <p className="text-gray-600 mt-1">Resumen completo de la gestión clínica</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <EstadoConexion />
-              <div className="flex items-center space-x-2 bg-blue-50 px-4 py-2 rounded-lg">
-                <Stethoscope className="h-5 w-5 text-blue-600" />
-                <span className="text-blue-700 font-medium">Sistema Activo</span>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => reloadData()}
+                className="p-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                title="Actualizar datos"
+              >
+                <RefreshCw className="h-5 w-5 text-blue-600" />
+              </button>
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <Activity className="h-8 w-8 text-blue-600" />
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Tarjetas de Estadísticas */}
+        {/* Tarjetas de Estadísticas Principales */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <TarjetaEstadistica
-            titulo="Total Pacientes"
-            valor={stats.totalPacientes}
-            descripcion="Pacientes activos"
-            icono={Users}
-            color="bg-blue-500"
-          />
-          
-          <TarjetaEstadistica
-            titulo="Citas Hoy"
-            valor={stats.citasHoy}
-            descripcion={`${stats.citasPendientes} pendientes`}
-            icono={Calendar}
-            color="bg-green-500"
-          />
-          
-          <TarjetaEstadistica
-            titulo="Fichas Activas"
-            valor={stats.fichasActivas}
-            descripcion="Fichas odontológicas"
-            icono={FileText}
-            color="bg-purple-500"
-          />
-          
-          <TarjetaEstadistica
-            titulo="Ingresos Mensuales"
-            valor={stats.ingresosMensuales}
-            descripcion="Este mes"
-            icono={DollarSign}
-            tendencia="+12.5%"
-            color="bg-yellow-500"
-          />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">Total Pacientes</p>
+                {loading.stats ? (
+                  <LoadingSpinner size="h-8 w-8" />
+                ) : errors.stats ? (
+                  <p className="text-red-500 text-sm">Error</p>
+                ) : (
+                  <>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">
+                      {stats?.totalPacientes ?? 0}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {stats?.pacientesActivos ?? 0} activos
+                    </p>
+                  </>
+                )}
+              </div>
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">Citas Hoy</p>
+                {loading.stats ? (
+                  <LoadingSpinner size="h-8 w-8" />
+                ) : (
+                  <>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">
+                      {stats?.citasHoy ?? 0}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {stats?.citasSemana ?? 0} esta semana
+                    </p>
+                  </>
+                )}
+              </div>
+              <div className="bg-green-50 p-3 rounded-lg">
+                <Calendar className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">Fichas Activas</p>
+                {loading.stats ? (
+                  <LoadingSpinner size="h-8 w-8" />
+                ) : (
+                  <>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">
+                      {stats?.fichasActivas ?? 0}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {stats?.fichasMes ?? 0} este mes
+                    </p>
+                  </>
+                )}
+              </div>
+              <div className="bg-purple-50 p-3 rounded-lg">
+                <FileText className="h-6 w-6 text-purple-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">Ingresos Mes</p>
+                {loading.stats ? (
+                  <LoadingSpinner size="h-8 w-8" />
+                ) : (
+                  <>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">
+                      {formatearMoneda(stats?.ingresosMes ?? 0)}
+                    </p>
+                    <p className="text-sm text-green-600 mt-1">
+                      +{stats?.crecimientoIngresos ?? 0}% vs anterior
+                    </p>
+                  </>
+                )}
+              </div>
+              <div className="bg-yellow-50 p-3 rounded-lg">
+                <DollarSign className="h-6 w-6 text-yellow-600" />
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Gráficos Principales */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          {/* Evolución de Citas */}
+        {/* Segunda fila de estadísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Evolución de Citas</h3>
-              <p className="text-gray-600 text-sm">Citas realizadas por mes</p>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Servicios Pendientes</h3>
+              <AlertCircle className="h-5 w-5 text-orange-500" />
             </div>
-            {citasPorMes.length > 0 ? (
+            {loading.stats ? (
+              <LoadingSpinner />
+            ) : (
+              <>
+                <p className="text-2xl font-bold text-orange-600">
+                  {stats?.serviciosPendientes ?? 0}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">Requieren atención</p>
+              </>
+            )}
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Facturas Pendientes</h3>
+              <Clock className="h-5 w-5 text-red-500" />
+            </div>
+            {loading.stats ? (
+              <LoadingSpinner />
+            ) : (
+              <>
+                <p className="text-2xl font-bold text-red-600">
+                  {stats?.facturasPendientes ?? 0}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {formatearMoneda(stats?.montoFacturasPendientes ?? 0)}
+                </p>
+              </>
+            )}
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Citas Confirmadas</h3>
+              <UserCheck className="h-5 w-5 text-green-500" />
+            </div>
+            {loading.stats ? (
+              <LoadingSpinner />
+            ) : (
+              <>
+                <p className="text-2xl font-bold text-green-600">
+                  {stats?.citasConfirmadas ?? 0}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">Próximas 7 días</p>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Gráficos */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Gráfico de Citas por Día */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Citas por Día (Últimos 7 días)</h3>
+              {loading.citasChart && (
+                <LoadingSpinner size="h-5 w-5" />
+              )}
+            </div>
+            {errors.citasChart ? (
+              <ErrorDisplay 
+                error={errors.citasChart} 
+                onRetry={() => reloadData('citasChart')} 
+                type="citasChart"
+              />
+            ) : loading.citasChart ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <LoadingSpinner />
+              </div>
+            ) : (
               <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={citasPorMes}>
-                  <defs>
-                    <linearGradient id="colorCitas" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
+                <LineChart data={citasData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="fecha" stroke="#6b7280" />
+                  <YAxis stroke="#6b7280" />
                   <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                    formatter={(value: any) => [`${value} citas`, 'Citas']}
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px' 
+                    }} 
                   />
-                  <Area 
+                  <Line 
                     type="monotone" 
                     dataKey="citas" 
-                    stroke="#0ea5e9" 
+                    stroke="#3B82F6" 
                     strokeWidth={3}
-                    fillOpacity={1} 
-                    fill="url(#colorCitas)" 
+                    dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
                   />
-                </AreaChart>
+                </LineChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-64 text-gray-500">
-                <div className="text-center">
-                  <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                  <p>No hay datos disponibles</p>
-                </div>
-              </div>
             )}
           </div>
 
@@ -1166,238 +1129,110 @@ export default function DashboardPage() {
               <h3 className="text-lg font-semibold text-gray-900">Estado de Citas</h3>
               <p className="text-gray-600 text-sm">Distribución actual</p>
             </div>
-            <div className="space-y-4">
-              {[
-                { estado: 'Confirmadas', valor: stats.citasPorEstado.confirmadas, color: 'bg-green-50 border-green-200', icono: CheckCircle2, iconoColor: 'text-green-600' },
-                { estado: 'Pendientes', valor: stats.citasPorEstado.pendientes, color: 'bg-yellow-50 border-yellow-200', icono: Clock, iconoColor: 'text-yellow-600' },
-                { estado: 'Modificadas', valor: stats.citasPorEstado.modificadas, color: 'bg-blue-50 border-blue-200', icono: Activity, iconoColor: 'text-blue-600' },
-                { estado: 'Canceladas', valor: stats.citasPorEstado.canceladas, color: 'bg-red-50 border-red-200', icono: XCircle, iconoColor: 'text-red-600' }
-              ].map(({ estado, valor, color, icono: IconoEstado, iconoColor }) => (
-                <div key={estado} className={`flex items-center justify-between p-4 rounded-lg border ${color}`}>
-                  <div className="flex items-center">
-                    <IconoEstado className={`h-5 w-5 ${iconoColor} mr-3`} />
-                    <span className="font-medium text-gray-900">{estado}</span>
+            {loading.stats ? (
+              <div className="space-y-4">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="flex items-center justify-between p-4 rounded-lg bg-gray-50 animate-pulse">
+                    <div className="h-4 bg-gray-300 rounded w-24"></div>
+                    <div className="h-4 bg-gray-300 rounded w-8"></div>
                   </div>
-                  <span className="text-lg font-bold text-gray-900">{valor}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {[
+                  { estado: 'Confirmadas', valor: stats?.citasPorEstado?.confirmadas ?? 0, color: 'bg-green-50 border-green-200', icono: CheckCircle, iconoColor: 'text-green-600' },
+                  { estado: 'Pendientes', valor: stats?.citasPorEstado?.pendientes ?? 0, color: 'bg-yellow-50 border-yellow-200', icono: Clock, iconoColor: 'text-yellow-600' },
+                  { estado: 'Modificadas', valor: stats?.citasPorEstado?.modificadas ?? 0, color: 'bg-blue-50 border-blue-200', icono: Activity, iconoColor: 'text-blue-600' },
+                  { estado: 'Canceladas', valor: stats?.citasPorEstado?.canceladas ?? 0, color: 'bg-red-50 border-red-200', icono: XCircle, iconoColor: 'text-red-600' }
+                ].map(({ estado, valor, color, icono: IconoEstado, iconoColor }) => (
+                  <div key={estado} className={`flex items-center justify-between p-4 rounded-lg border ${color}`}>
+                    <div className="flex items-center">
+                      <IconoEstado className={`h-5 w-5 ${iconoColor} mr-3`} />
+                      <span className="font-medium text-gray-900">{estado}</span>
+                    </div>
+                    <span className="text-lg font-bold text-gray-900">{valor}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* Gráficos Adicionales */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          {/* Pacientes por Edad */}
+          {/* Gráfico de Ingresos Mensuales */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Pacientes por Edad</h3>
-              <p className="text-gray-600 text-sm">Distribución demográfica</p>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Ingresos Mensuales</h3>
+              {loading.ingresos && (
+                <LoadingSpinner size="h-5 w-5" />
+              )}
             </div>
-            {pacientesPorEdad.length > 0 ? (
+            {errors.ingresos ? (
+              <ErrorDisplay 
+                error={errors.ingresos} 
+                onRetry={() => reloadData('ingresos')} 
+                type="ingresos"
+              />
+            ) : loading.ingresos ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <LoadingSpinner />
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={ingresosMensuales}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="mes" stroke="#6b7280" />
+                  <YAxis stroke="#6b7280" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px' 
+                    }}
+                    formatter={(value: number) => [formatearMoneda(value), 'Ingresos']}
+                  />
+                  <Bar dataKey="ingresos" fill="#10B981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          {/* Gráfico de Estados de Servicios */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Distribución de Estados de Servicios</h3>
+              {loading.servicios && (
+                <LoadingSpinner size="h-5 w-5" />
+              )}
+            </div>
+            {errors.servicios ? (
+              <ErrorDisplay 
+                error={errors.servicios} 
+                onRetry={() => reloadData('servicios')} 
+                type="servicios"
+              />
+            ) : loading.servicios ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <LoadingSpinner />
+              </div>
+            ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={pacientesPorEdad}
+                    data={estadisticasServicios}
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={({ rango, porcentaje }) => `${rango}: ${porcentaje}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
+                    outerRadius={100}
                     dataKey="cantidad"
+                    label={renderCustomizedLabel}
                   >
-                    {pacientesPorEdad.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={COLORES_GRAFICOS[index % COLORES_GRAFICOS.length]} 
-                      />
+                    {estadisticasServicios.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={coloresPie[index % coloresPie.length]} />
                     ))}
                   </Pie>
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                    formatter={(value: any) => [`${value} pacientes`, 'Cantidad']}
-                  />
+                  <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-64 text-gray-500">
-                <div className="text-center">
-                  <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                  <p>No hay datos disponibles</p>
-                </div>
-              </div>
             )}
-          </div>
-
-          {/* Tratamientos Más Comunes */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Tratamientos Realizados</h3>
-              <p className="text-gray-600 text-sm">Más frecuentes</p>
-            </div>
-            {tratamientosMasComunes.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={tratamientosMasComunes} layout="horizontal">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
-                  <YAxis 
-                    type="category" 
-                    dataKey="tratamiento" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#64748b', fontSize: 12 }}
-                    width={120}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                    formatter={(value: any, name: any) => [
-                      name === 'cantidad' ? `${value} tratamientos` : formatearMoneda(value),
-                      name === 'cantidad' ? 'Cantidad' : 'Ingresos'
-                    ]}
-                  />
-                  <Bar dataKey="cantidad" fill="#0ea5e9" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-64 text-gray-500">
-                <div className="text-center">
-                  <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                  <p>No hay datos disponibles</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Alertas y Notificaciones Mejoradas */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-              <AlertCircle className="h-5 w-5 text-orange-500 mr-2" />
-              Alertas y Estadísticas del Sistema
-            </h3>
-          </div>
-          
-
-          
-          {/* Primera fila - Servicios */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <Clock className="h-5 w-5 text-yellow-600 mr-3" />
-                <div>
-                  <p className="font-semibold text-yellow-800">{stats.serviciosPendientes || 0} servicios pendientes</p>
-                  <p className="text-sm text-yellow-600">Requieren atención</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <XCircle className="h-5 w-5 text-red-600 mr-3" />
-                <div>
-                  <p className="font-semibold text-red-800">{stats.serviciosVencidos || 0} servicios vencidos</p>
-                  <p className="text-sm text-red-600">Necesitan renovación</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <CheckCircle2 className="h-5 w-5 text-green-600 mr-3" />
-                <div>
-                  <p className="font-semibold text-green-800">{stats.serviciosPagados || 0} servicios pagados</p>
-                  <p className="text-sm text-green-600">Al día</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Segunda fila - Tratamientos y Citas */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <Stethoscope className="h-5 w-5 text-blue-600 mr-3" />
-                <div>
-                  <p className="font-semibold text-blue-800">{stats.totalTratamientos || 0} tratamientos</p>
-                  <p className="text-sm text-blue-600">Realizados</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <FileText className="h-5 w-5 text-purple-600 mr-3" />
-                <div>
-                  <p className="font-semibold text-purple-800">{stats.planesTratamiento || 0} planes activos</p>
-                  <p className="text-sm text-purple-600">En progreso</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <Calendar className="h-5 w-5 text-orange-600 mr-3" />
-                <div>
-                  <p className="font-semibold text-orange-800">{stats.citasPendientes || 0} citas pendientes</p>
-                  <p className="text-sm text-orange-600">Por confirmar</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <Activity className="h-5 w-5 text-indigo-600 mr-3" />
-                <div>
-                  <p className="font-semibold text-indigo-800">{stats.facturasPendientes || 0} facturas pendientes</p>
-                  <p className="text-sm text-indigo-600">Por cobrar</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Tercera fila - Estado General */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <User className="h-5 w-5 text-gray-600 mr-3" />
-                  <div>
-                    <p className="font-semibold text-gray-800">Pacientes nuevos hoy</p>
-                    <p className="text-sm text-gray-600">Registros del día</p>
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-gray-800">
-                  {stats.pacientesNuevosHoy || 0}
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <DollarSign className="h-5 w-5 text-emerald-600 mr-3" />
-                  <div>
-                    <p className="font-semibold text-emerald-800">Ingresos del mes</p>
-                    <p className="text-sm text-emerald-600">Facturación</p>
-                  </div>
-                </div>
-                <div className="text-xl font-bold text-emerald-800">
-                  S/ {(stats.ingresosMensuales || 0).toLocaleString()}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -1416,8 +1251,8 @@ export default function DashboardPage() {
                   placeholder="Buscar paciente..."
                   value={busqueda}
                   onChange={(e) => {
-                    setBusqueda(e.target.value)
-                    setPaginaActual(1)
+                    setBusqueda(e.target.value);
+                    setPaginaActual(1);
                   }}
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-full sm:w-80"
                 />
@@ -1426,9 +1261,15 @@ export default function DashboardPage() {
           </div>
           
           <div className="overflow-x-auto">
-            {loadingPacientes ? (
+            {errors.pacientes ? (
+              <ErrorDisplay 
+                error={errors.pacientes} 
+                onRetry={loadPacientes} 
+                type="pacientes"
+              />
+            ) : loading.pacientes ? (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <LoadingSpinner />
                 <span className="ml-2 text-gray-600">Cargando pacientes...</span>
               </div>
             ) : pacientesData.pacientes.length === 0 ? (
@@ -1499,17 +1340,17 @@ export default function DashboardPage() {
                       </td>
                       <td className="py-4 px-6">
                         <span className="text-sm font-medium text-gray-900">
-                          {paciente.edad || 'N/A'} años
+                          {paciente.edad ?? 'N/A'} años
                         </span>
                       </td>
                       <td className="py-4 px-6">
                         <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                          {paciente._count.fichasOdontologicas}
+                          {paciente._count.fichasOdontologicas ?? 0}
                         </span>
                       </td>
                       <td className="py-4 px-6">
                         <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                          {paciente._count.citas}
+                          {paciente._count.citas ?? 0}
                         </span>
                       </td>
                       <td className="py-4 px-6">
@@ -1542,24 +1383,25 @@ export default function DashboardPage() {
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setPaginaActual(Math.max(1, paginaActual - 1))}
-                  disabled={paginaActual === 1}
-                  className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition-colors"
+                  disabled={paginaActual === 1 || loading.pacientes}
+                  className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition-colors flex items-center"
                 >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
                   Anterior
                 </button>
                 
-                {/* Números de página */}
                 {Array.from({ length: Math.min(5, pacientesData.totalPages) }, (_, i) => {
                   const pageNum = Math.max(1, Math.min(
                     pacientesData.totalPages - 4,
                     Math.max(1, paginaActual - 2)
-                  )) + i
+                  )) + i;
                   
                   return (
                     <button
                       key={pageNum}
                       onClick={() => setPaginaActual(pageNum)}
-                      className={`px-3 py-1 rounded-md transition-colors ${
+                      disabled={loading.pacientes}
+                      className={`px-3 py-1 rounded-md transition-colors disabled:opacity-50 ${
                         pageNum === paginaActual
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1567,51 +1409,24 @@ export default function DashboardPage() {
                     >
                       {pageNum}
                     </button>
-                  )
+                  );
                 })}
                 
                 <button
                   onClick={() => setPaginaActual(Math.min(pacientesData.totalPages, paginaActual + 1))}
-                  disabled={paginaActual === pacientesData.totalPages}
-                  className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition-colors"
+                  disabled={paginaActual === pacientesData.totalPages || loading.pacientes}
+                  className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition-colors flex items-center"
                 >
                   Siguiente
+                  <ChevronRight className="h-4 w-4 ml-1" />
                 </button>
               </div>
             </div>
           )}
         </div>
       </div>
-      
-      <style jsx global>{`
-        @keyframes slide-in-right {
-          from {
-            opacity: 0;
-            transform: translateX(100%);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        
-        .animate-slide-in-right {
-          animation: slide-in-right 0.3s ease-out;
-        }
-        
-        .animate-pulse {
-          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: .5;
-          }
-        }
-      `}</style>
     </div>
-  )
-}
+  );
+};
+
+export default Dashboard;
