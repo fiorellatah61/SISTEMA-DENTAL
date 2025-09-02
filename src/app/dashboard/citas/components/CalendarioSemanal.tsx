@@ -1,3 +1,6 @@
+
+// // // app/dashboard/citas/components/CalendarioSemanal.tsx
+
 'use client'
 import { useState, useEffect } from 'react'
 
