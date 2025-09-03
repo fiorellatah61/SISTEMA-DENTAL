@@ -625,6 +625,8 @@ interface Stats {
     modificadas: number;
     canceladas: number;
   };
+   // ✅ NUEVA PROPIEDAD
+  serviciosChart: ServiciosData[];
 }
 
 interface PacienteWithCount {
@@ -635,7 +637,7 @@ interface PacienteWithCount {
   fechaNacimiento?: Date;
   edad?: number;
   sexo?: 'M' | 'F' | 'OTRO';
-  telefono?: string;
+  telefono? : string;
   email?: string;
   estado: 'ACTIVO' | 'INACTIVO';
   createdAt: Date;
@@ -684,7 +686,7 @@ interface LoadingStates {
   stats: boolean;
   citasChart: boolean;
   ingresos: boolean;
-  servicios: boolean;
+  // servicios: boolean;
   pacientes: boolean;
 }
 
@@ -696,14 +698,14 @@ const Dashboard = () => {
     pacientes: [], total: 0, currentPage: 1, totalPages: 1, hasMore: false 
   });
   const [ingresosMensuales, setIngresosMensuales] = useState<IngresosData[]>([]);
-  const [estadisticasServicios, setEstadisticasServicios] = useState<ServiciosData[]>([]);
+  // const [estadisticasServicios, setEstadisticasServicios] = useState<ServiciosData[]>([]);
   
   // Estados de carga independientes
   const [loading, setLoading] = useState<LoadingStates>({
     stats: true,
     citasChart: true,
     ingresos: true,
-    servicios: true,
+    // servicios: true,
     pacientes: true
   });
   
@@ -798,7 +800,8 @@ const Dashboard = () => {
         montoFacturasPendientes: 0,
         ingresosMes: 0,
         crecimientoIngresos: 0,
-        citasPorEstado: { confirmadas: 0, pendientes: 0, modificadas: 0, canceladas: 0 }
+        citasPorEstado: { confirmadas: 0, pendientes: 0, modificadas: 0, canceladas: 0 },
+        serviciosChart: [] // ✅ Agregar esta línea
       });
     }
 
@@ -810,9 +813,9 @@ const Dashboard = () => {
       fetchWithRetry('/api/dashboard/ingresos-mensuales', 'ingresos', setIngresosMensuales, []);
     }
 
-    if (!type || type === 'servicios') {
-      fetchWithRetry('/api/dashboard/servicios-stats', 'servicios', setEstadisticasServicios, []);
-    }
+    // if (!type || type === 'servicios') {
+    //   fetchWithRetry('/api/dashboard/servicios-stats', 'servicios', setEstadisticasServicios, []);
+    // }
   }, []);
 
   // Función específica para pacientes (con parámetros)
@@ -861,7 +864,6 @@ const Dashboard = () => {
     const { name, percent } = props;
     return `${name}: ${((percent || 0) * 100).toFixed(0)}%`;
   };
-
   const coloresPie = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
   // Componente de estado de carga
@@ -1020,6 +1022,9 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
+
+
+          
         </div>
 
         {/* Segunda fila de estadísticas */}
@@ -1197,44 +1202,83 @@ const Dashboard = () => {
           </div>
 
           {/* Gráfico de Estados de Servicios */}
+     
+{/* Gráfico de Estados de Servicios - ACTUALIZADO */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Distribución de Estados de Servicios</h3>
-              {loading.servicios && (
+              {loading.stats && (
                 <LoadingSpinner size="h-5 w-5" />
               )}
+              {!loading.stats && (
+                <button
+                  onClick={() => reloadData('stats')} // ✅ Cambió de 'servicios' a 'stats'
+                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Actualizar datos"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </button>
+              )}
             </div>
-            {errors.servicios ? (
+            {errors.stats ? ( // ✅ Cambió de 'errors.servicios' a 'errors.stats'
               <ErrorDisplay 
-                error={errors.servicios} 
-                onRetry={() => reloadData('servicios')} 
+                error={errors.stats} 
+                onRetry={() => reloadData('stats')} // ✅ Cambió de 'servicios' a 'stats'
                 type="servicios"
               />
-            ) : loading.servicios ? (
+            ) : loading.stats ? ( // ✅ Cambió de 'loading.servicios' a 'loading.stats'
               <div className="h-[300px] flex items-center justify-center">
                 <LoadingSpinner />
               </div>
+            ) : !stats?.serviciosChart || stats.serviciosChart.length === 0 ? ( // ✅ Nueva verificación
+              <div className="h-[300px] flex items-center justify-center text-gray-500">
+                <div className="text-center">
+                  <Activity className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p>No hay datos de servicios disponibles</p>
+                </div>
+              </div>
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={estadisticasServicios}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    dataKey="cantidad"
-                    label={renderCustomizedLabel}
-                  >
-                    {estadisticasServicios.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={coloresPie[index % coloresPie.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              <>
+                {/* Resumen numérico antes del gráfico */}
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  {stats.serviciosChart.map((item, index) => (
+                    <div key={item.name} className="text-center p-3 rounded-lg border">
+                      <div 
+                        className="w-4 h-4 rounded-full mx-auto mb-2" 
+                        style={{ backgroundColor: coloresPie[index % coloresPie.length] }}
+                      ></div>
+                      <p className="text-sm font-medium text-gray-600">{item.name}</p>
+                      <p className="text-lg font-bold text-gray-900">{item.cantidad}</p>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Gráfico circular */}
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={stats.serviciosChart} // ✅ Usar datos unificados
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      dataKey="cantidad"
+                      label={renderCustomizedLabel}
+                    >
+                      {stats.serviciosChart.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={coloresPie[index % coloresPie.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value: any, name: any) => [value, name]}
+                      labelFormatter={(label: any) => `${label}`}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </>
             )}
           </div>
-        </div>
+
+       </div>
 
         {/* Lista de Pacientes */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100">

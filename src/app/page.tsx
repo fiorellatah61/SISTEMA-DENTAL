@@ -136,7 +136,7 @@ function AppointmentForm() {
           name="phone"
           value={formData.phone}
           onChange={handleChange}
-          placeholder="Teléfono"
+          placeholder="Teléfono(opcional)"
           required
           className="w-full px-6 py-4 bg-slate-700/50 border border-slate-600/50 rounded-xl focus:ring-2 focus:ring-teal-400 focus:border-teal-400 text-white placeholder-slate-300 backdrop-blur-sm transition-all duration-300"
         />
