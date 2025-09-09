@@ -1,8 +1,8 @@
+// // // app/api/configuracion/check-email/route.ts
+// // NUEVO CON SINGLETON --------------------
 // // app/api/configuracion/check-email/route.ts
 // import { NextRequest, NextResponse } from 'next/server'
-//  import { PrismaClient } from "@prisma/client"
-
-// const prisma = new PrismaClient()
+// import { prisma } from '@/lib/prisma'
 
 // export async function POST(request: NextRequest) {
 //   try {
@@ -14,7 +14,6 @@
 
 //     console.log('🔍 Verificando email:', email)
 
-//     // Usar SQL directo en lugar del modelo
 //     const emailAutorizado = await prisma.$queryRaw`
 //       SELECT id, email, activo 
 //       FROM emails_autorizados 
@@ -23,7 +22,6 @@
 //       LIMIT 1
 //     `
 
-//     // Verificar si se encontró el email
 //     const isAuthorized = Array.isArray(emailAutorizado) && emailAutorizado.length > 0
 
 //     console.log('✅ Email autorizado:', isAuthorized)
@@ -35,11 +33,13 @@
 //   } catch (error) {
 //     console.error('Error verificando email:', error)
 //     return NextResponse.json({ authorized: false }, { status: 500 })
-//   } finally {
-//     await prisma.$disconnect()
 //   }
+//   // ❌ NO pongas prisma.$disconnect() aquí
 // }
-// NUEVO CON SINGLETON --------------------
+
+
+// NUEVO==========================================
+
 // app/api/configuracion/check-email/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -54,15 +54,18 @@ export async function POST(request: NextRequest) {
 
     console.log('🔍 Verificando email:', email)
 
-    const emailAutorizado = await prisma.$queryRaw`
-      SELECT id, email, activo 
-      FROM emails_autorizados 
-      WHERE LOWER(email) = LOWER(${email}) 
-      AND activo = true
-      LIMIT 1
-    `
+    // ✅ REEMPLAZA el $queryRaw con esto:
+    const emailAutorizado = await prisma.emailAutorizado.findFirst({
+      where: {
+        email: {
+          equals: email,
+          mode: 'insensitive' // Equivalente a LOWER()
+        },
+        activo: true
+      }
+    })
 
-    const isAuthorized = Array.isArray(emailAutorizado) && emailAutorizado.length > 0
+    const isAuthorized = !!emailAutorizado // Más simple que verificar array
 
     console.log('✅ Email autorizado:', isAuthorized)
 
@@ -74,5 +77,4 @@ export async function POST(request: NextRequest) {
     console.error('Error verificando email:', error)
     return NextResponse.json({ authorized: false }, { status: 500 })
   }
-  // ❌ NO pongas prisma.$disconnect() aquí
 }

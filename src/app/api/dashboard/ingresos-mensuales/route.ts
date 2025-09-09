@@ -186,6 +186,14 @@
 // Propósito: API para calcular ingresos mensuales de los últimos 6 meses para el BarChart.
 // Optimiza con cache y consultas paralelas, maneja errores.
 // ========== API: Ingresos Mensuales ==========
+// src/app/api/dashboard/ingresos-mensuales/route.ts
+// Propósito: API para calcular ingresos mensuales de los últimos 6 meses para el BarChart.
+// Optimiza con cache y consultas paralelas, maneja errores.
+// ========== API: Ingresos Mensuales ==========
+// src/app/api/dashboard/ingresos-mensuales/route.ts
+// Propósito: API para calcular ingresos mensuales de los últimos 6 meses para el BarChart.
+// Optimiza con cache y consultas paralelas, maneja errores.
+// ========== API: Ingresos Mensuales ==========
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -205,22 +213,36 @@ export async function GET() {
     const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 5, 1);
     const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
-    // Consulta única optimizada - CORREGIDO: usar nombres correctos de tabla y columnas
+    // Consulta usando ORM de Prisma (más seguro que SQL raw)
     const ingresosRaw = await executeDashboardQuery(
       async () => {
-        const result = await prisma.$queryRaw<Array<{mes: number, anio: number, total: number}>>`
-          SELECT 
-            EXTRACT(MONTH FROM fecha_emision) as mes,
-            EXTRACT(YEAR FROM fecha_emision) as anio,
-            SUM(monto) as total
-          FROM facturas
-          WHERE estado = 'COMPLETADO' 
-            AND fecha_emision >= ${startDate} 
-            AND fecha_emision <= ${endDate}
-          GROUP BY EXTRACT(YEAR FROM fecha_emision), EXTRACT(MONTH FROM fecha_emision)
-          ORDER BY anio ASC, mes ASC
-        `;
-        return result;
+        const result = await prisma.factura.findMany({
+          where: {
+            estado: 'COMPLETADO', // Usa el enum del modelo, Prisma se encarga del mapeo
+            fechaEmision: {
+              gte: startDate,
+              lte: endDate
+            }
+          },
+          select: {
+            monto: true,
+            fechaEmision: true
+          }
+        });
+        
+        // Procesar agrupación en JavaScript
+        const groupedData = new Map<string, number>();
+        result.forEach(factura => {
+          const date = factura.fechaEmision;
+          const key = `${date.getFullYear()}-${date.getMonth() + 1}`;
+          const current = groupedData.get(key) || 0;
+          groupedData.set(key, current + Number(factura.monto));
+        });
+        
+        return Array.from(groupedData.entries()).map(([key, total]) => {
+          const [anio, mes] = key.split('-');
+          return { mes: parseInt(mes), anio: parseInt(anio), total };
+        });
       },
       []
     );
