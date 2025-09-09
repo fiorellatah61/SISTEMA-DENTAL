@@ -1606,7 +1606,7 @@ export default function OdontogramaPage() {
               </div>
             )}
 
-            {/* Tabla de historial de piezas (si existe odontograma) */}
+            {/* Tabla de historial de piezas (si existe odontograma)
             {odontograma && odontograma.piezasOdontograma.length > 0 && (
               <div className="mt-6 sm:mt-8">
                 <h3 className="text-lg font-semibold mb-4 text-blue-800">Historial de Tratamientos</h3>
@@ -1654,7 +1654,188 @@ export default function OdontogramaPage() {
                   </table>
                 </div>
               </div>
-            )}
+            )} */}
+{/* Tabla de historial de piezas (si existe odontograma) */}
+{odontograma && odontograma.piezasOdontograma.length > 0 && (
+  <div className="mt-6 sm:mt-8">
+    <div className="bg-white rounded-xl lg:rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden max-w-full">
+      <div className="px-3 lg:px-5 py-3 lg:py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50/50 to-slate-50/30">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm lg:text-base font-bold text-slate-900">Historial de Tratamientos</h3>
+            <p className="text-xs text-slate-600">
+              Total: {odontograma.piezasOdontograma.length} registros
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div className="p-3 lg:p-5">
+        {/* Vista de escritorio - Tabla completa */}
+        <div className="hidden xl:block overflow-x-auto max-w-full">
+          <table className="w-full table-fixed">
+            <thead>
+              <tr className="border-b border-slate-200">
+                <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-20">
+                  Fecha
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-16">
+                  Diente
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-1/5">
+                  Condición
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-1/5">
+                  Procedimiento
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-1/6">
+                  Subtipo
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-16">
+                  Cara
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-1/5">
+                  Especificaciones
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-20">
+                  Estado
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {odontograma.piezasOdontograma
+                .sort((a, b) => new Date(b.fechaRegistro).getTime() - new Date(a.fechaRegistro).getTime())
+                .map((pieza) => (
+                <tr key={pieza.id} className="hover:bg-slate-50/50 transition-colors duration-200">
+                  <td className="px-3 py-3">
+                    <span className="text-xs font-medium text-slate-900 whitespace-nowrap">
+                      {new Date(pieza.fechaRegistro).toLocaleDateString()}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded whitespace-nowrap">
+                      {pieza.diente}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <span className="text-sm text-slate-900 truncate block">
+                      {pieza.condiciones || '-'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <span className="text-sm font-medium text-slate-900 truncate block">
+                      {pieza.procedimiento}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <span className="text-sm text-slate-600 truncate block">
+                      {pieza.subtipo || '-'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <span className="text-sm text-slate-600 whitespace-nowrap">
+                      {pieza.caraDental || '-'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <span className="text-sm text-slate-600 truncate block">
+                      {pieza.especificaciones || '-'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                      pieza.estado === 'Saludable' ? 'bg-emerald-100 text-emerald-800' :
+                      pieza.estado === 'Seguimiento' ? 'bg-yellow-100 text-yellow-800' :
+                      pieza.estado === 'Necesita atención' ? 'bg-blue-100 text-blue-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {pieza.estado}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Vista móvil, tablet y laptop - Cards */}
+        <div className="xl:hidden space-y-3">
+          {odontograma.piezasOdontograma
+            .sort((a, b) => new Date(b.fechaRegistro).getTime() - new Date(a.fechaRegistro).getTime())
+            .map((pieza) => (
+            <div key={pieza.id} className="bg-slate-50/50 rounded-lg p-3 border border-slate-100 hover:shadow-md transition-all duration-200">
+              <div className="space-y-2">
+                {/* Header con fecha, diente y estado */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-slate-100 rounded-full p-2 flex-shrink-0">
+                      <span className="text-xs font-bold text-slate-600">#{pieza.diente}</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-slate-900 text-sm">
+                        Diente {pieza.diente}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {new Date(pieza.fechaRegistro).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                    pieza.estado === 'Saludable' ? 'bg-emerald-100 text-emerald-800' :
+                    pieza.estado === 'Seguimiento' ? 'bg-yellow-100 text-yellow-800' :
+                    pieza.estado === 'Necesita atención' ? 'bg-blue-100 text-blue-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {pieza.estado}
+                  </span>
+                </div>
+                
+                {/* Procedimiento y condición */}
+                <div className="pl-9 space-y-1">
+                  <div>
+                    <span className="text-xs font-semibold text-slate-700">Procedimiento:</span>
+                    <span className="text-xs text-slate-900 ml-2">{pieza.procedimiento}</span>
+                  </div>
+                  {pieza.condiciones && (
+                    <div>
+                      <span className="text-xs font-semibold text-slate-700">Condición:</span>
+                      <span className="text-xs text-slate-600 ml-2">{pieza.condiciones}</span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Detalles adicionales en grid */}
+                <div className="pl-9 pt-2 border-t border-slate-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {pieza.subtipo && (
+                      <div>
+                        <span className="font-semibold text-slate-700">Subtipo:</span>
+                        <span className="text-slate-600 ml-1">{pieza.subtipo}</span>
+                      </div>
+                    )}
+                    {pieza.caraDental && (
+                      <div>
+                        <span className="font-semibold text-slate-700">Cara dental:</span>
+                        <span className="text-slate-600 ml-1">{pieza.caraDental}</span>
+                      </div>
+                    )}
+                    {pieza.especificaciones && (
+                      <div className="sm:col-span-2">
+                        <span className="font-semibold text-slate-700">Especificaciones:</span>
+                        <span className="text-slate-600 ml-1">{pieza.especificaciones}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
             {/* Botones de acción */}
             <ActionButtons
               pacienteSeleccionado={pacienteSeleccionado}
